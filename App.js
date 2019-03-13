@@ -20,6 +20,8 @@ export default class App extends React.Component {
 
       location: null,
       errorMessage: null,
+
+      busqueda: ""
     };
 
     this.searchPlaces = (query) => {
