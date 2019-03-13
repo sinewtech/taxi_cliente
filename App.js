@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
 import { MapView, Constants, Location, Permissions } from 'expo';
 
 const API_KEY = "AIzaSyApNgtxFBp0SXSHljP_xku6peNCzjTFWM4";
@@ -85,7 +85,7 @@ export default class App extends React.Component {
         });
     };
 
-    this.searchPlaces("colonia las colinas");
+    this.searchPlaces("popeyes");
   }
 
   _getLocationAsync = async () => {
@@ -113,7 +113,9 @@ export default class App extends React.Component {
         } else {
           console.log("Status failed");
         }
-  }
+      })
+    }
+
             
   componentDidMount(){
     this.locationInterval = setInterval(() => {
@@ -177,15 +179,15 @@ export default class App extends React.Component {
     return (
       <View style={{flex:1 }}>
       <MapView
-        style={{ flex: 1 }}
-        initialRegion={{
+          style={{ flex: 1 }}
+          showsCompass={false}
+            initialRegion={{
           latitude: 14.0481,
-          longitude: -87.1741,
-          latitudeDelta: 0.01,
+          longitude: -87.1741,	          
+          latitudeDelta: 0.01,	         
           longitudeDelta: 0.01,
-        }}
-        >
-          
+        }}>
+        
           {
             this.state.markers.map(marker => marker)
           }
@@ -198,8 +200,35 @@ export default class App extends React.Component {
             coordinates={coords}
           />
         </MapView>
+        <View style={{ position: "absolute", flex: 1, width: "100%" }}>
+          <TextInput
+            style={styles.searchBar}
+            placeholder={"Buscar un lugar"}
+            onChangeText = {(busqueda) => this.setState({busqueda})}/>
         </View>
-      </View>
+        </View>
     );
   }
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    //alignItems: 'center',	
+    //justifyContent: 'center',	
+  },
+
+  searchBar: {
+    fontSize: 18,
+    borderRadius: 10,
+    marginTop: 35,
+    marginRight: 15,
+    marginLeft: 15,
+    backgroundColor: "#ffffff",
+    height: 40,
+    borderWidth: 1,
+    borderColor: "#cceeff",
+    paddingLeft: 10,
+  },
+});
