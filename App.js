@@ -6,9 +6,8 @@ const API_KEY = "AIzaSyApNgtxFBp0SXSHljP_xku6peNCzjTFWM4";
 const decodePolyline = require('decode-google-map-polyline');
 
 export default class App extends React.Component {
-  constructor(props){
+  constructor(props) {
     super(props)
-
     this.state = {
       searchResults: {},
       markers: [],
@@ -114,14 +113,8 @@ export default class App extends React.Component {
         } else {
           console.log("Status failed");
         }
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-
-      return [];
   }
-
+            
   componentDidMount(){
     this.locationInterval = setInterval(() => {
       this._getLocationAsync();
@@ -206,7 +199,7 @@ export default class App extends React.Component {
           />
         </MapView>
         </View>
-
+      </View>
     );
   }
 }
