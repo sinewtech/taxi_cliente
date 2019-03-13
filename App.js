@@ -86,8 +86,6 @@ export default class App extends React.Component {
           console.error(error);
         });
     };
-
-    this.searchPlaces("popeyes");
   }
 
   _getLocationAsync = async () => {
@@ -204,6 +202,11 @@ export default class App extends React.Component {
         </MapView>
         <View style={{ position: "absolute", flex: 1, width: "100%" }}>
           <TextInput
+            onSubmitEditing={() => {
+              this.setState({polyline: []});
+              this.searchPlaces(this.state.busqueda);
+            }}
+            elevation={3}
             style={styles.searchBar}
             placeholder={"Buscar un lugar"}
             onChangeText = {(busqueda) => this.setState({busqueda})}/>
@@ -229,8 +232,10 @@ const styles = StyleSheet.create({
     marginLeft: 15,
     backgroundColor: "#ffffff",
     height: 40,
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: "#cceeff",
     paddingLeft: 10,
+    shadowOffset: { width: 10, height: 10, },
+    shadowOpacity: 1,
   },
 });
