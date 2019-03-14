@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, View, Animated } from 'react-native';
 import { MapView, Constants, Location, Permissions } from 'expo';
 
 const API_KEY = "AIzaSyApNgtxFBp0SXSHljP_xku6peNCzjTFWM4";
@@ -21,7 +21,14 @@ export default class App extends React.Component {
       location: null,
       errorMessage: null,
 
-      busqueda: ""
+      busqueda: "",
+
+      mapRegion: {
+        latitude: 14.0723,
+        longitude: -87.1921,
+        latitudeDelta: 0.1,
+        longitudeDelta: 0.1
+      }
     };
 
     this.searchPlaces = (query) => {
@@ -38,7 +45,7 @@ export default class App extends React.Component {
             var cont = 0;
 
             //responseJson.candidates.map((candidate) => {
-            responseJson.results.map((candidate) => {
+            responseJson.results.map( (candidate) => {
               //console.log("candidate " + candidate.name);
               //console.log("latitude " + candidate.geometry.location.lat);
               //console.log("longitude " + candidate.geometry.location.lng);
@@ -74,8 +81,49 @@ export default class App extends React.Component {
                );
             })
 
-            this.setState({markers: markers});
-            this.setState({lugares: lugares});
+            let mapRegion = {
+              latitude: 14.0723,
+              longitude: -87.1921,
+              latitudeDelta: 0.1,
+              longitudeDelta: 0.1
+            };
+
+            if (this.state.lugares.length > 0) {
+              len = this.state.lugares.length;
+
+              let avLat = 0;
+              let avLng = 0;
+
+              this.state.lugares.map((lugar) => {
+                avLat += lugar.coordenadas.lat;
+                avLng += lugar.coordenadas.lng;
+              });
+
+              avLat /= len;
+              avLng /= len;
+
+              mapRegion = {
+                latitude: avLat,
+                longitude: avLng,
+                latitudeDelta: 0.02,
+                longitudeDelta: 0.02
+              };
+
+            } else if (this.state.location) {
+              loc = this.state.location;
+
+              mapRegion = {
+                latitude: loc.lat,
+                longitude: loc.lng,
+                latitudeDelta: 0.02,
+                longitudeDelta: 0.02
+              };
+            }
+
+            //console.log(this.state.mapRegion);
+            this.setState({markers, lugares, mapRegion: mapRegion});
+            //this._map.animateToCoordinate(mapRegion, 1);
+
           }else{
             console.log("Status failed");
           }
@@ -118,14 +166,14 @@ export default class App extends React.Component {
 
             
   componentDidMount(){
-    this.locationInterval = setInterval(() => {
+    //this.locationInterval = setInterval(() => {
       this._getLocationAsync();
 
       if (this.state.location) {
         this.setState({ origin: { lat: this.state.location.coords.latitude, lng: this.state.location.coords.longitude } });
       }
 
-    }, 5000);
+    //}, 5000);
   }
 
   componentWillUnmount() {
@@ -174,20 +222,23 @@ export default class App extends React.Component {
       text = JSON.stringify(this.state.location);
     }
 
-    console.log(text);
+    console.log(this.state.mapRegion);
 
     return (
       <View style={{flex:1 }}>
-      <MapView
+      <MapView.Animated
+          ref={component => this._map = component}
           style={{ flex: 1 }}
           showsCompass={false}
-            initialRegion={{
-          latitude: 14.0481,
-          longitude: -87.1741,	          
-          latitudeDelta: 0.01,	         
-          longitudeDelta: 0.01,
-        }}>
-        
+          initialRegion={{
+            latitude: 14.0723,
+            longitude: -87.1921,
+            latitudeDelta: 0.1,
+            longitudeDelta: 0.1
+          }}
+          region={this.state.mapRegion}
+          >
+          
           {
             this.state.markers.map(marker => marker)
           }
@@ -199,7 +250,7 @@ export default class App extends React.Component {
             strokeColor="#03A9F4"
             coordinates={coords}
           />
-        </MapView>
+        </MapView.Animated>
         <View style={{ position: "absolute", flex: 1, width: "100%" }}>
           <TextInput
             onSubmitEditing={() => {
