@@ -1,10 +1,16 @@
 import React from 'react';
-import { StyleSheet, Button, Text, TextInput, View, Animated, Easing, ScrollView, Dimensions, TouchableHighlight, Keyboard } from 'react-native';
+import { StyleSheet, Button, Text, TextInput, View, Animated, Easing, ScrollView, Dimensions, TouchableHighlight, Keyboard, BackHandler } from 'react-native';
 import { MapView, Constants, Location, Permissions, AnimatedRegion } from 'expo';
 import { Icon } from 'react-native-elements'
 import Ripple from 'react-native-material-ripple';
 
 const API_KEY = "AIzaSyApNgtxFBp0SXSHljP_xku6peNCzjTFWM4";
+const INITIAL_REGION = {
+  latitude: 14.0723,
+  longitude: -87.1921,
+  latitudeDelta: 0.1,
+  longitudeDelta: 0.1
+};
 const decodePolyline = require('decode-google-map-polyline');
 
 export default class App extends React.Component {
@@ -31,6 +37,7 @@ export default class App extends React.Component {
     };
 
     this.searchPlaces = (query) => {
+      this.deactivate();
       //Llamar al api
       fetch('https://maps.googleapis.com/maps/api/place/textsearch/json?key=' + API_KEY + '&query=' + query + '&location=14.0723,-87.1921&radius=30000')
         .then((response) => response.json())
@@ -80,62 +87,7 @@ export default class App extends React.Component {
               );
             })
 
-            /*let mapRegion = {
-              latitude: 14.0723,
-              longitude: -87.1921,
-              latitudeDelta: 0.5,
-              longitudeDelta: 0.5
-            };
-
-            if (this.state.lugares.length > 0) {
-              let latMax = 0, lngMax = 0, latMin = Infinity, lngMin = Infinity;
-              len = this.state.lugares.length;
-
-              let avLat = 0;
-              let avLng = 0;
-
-              this.state.lugares.map((lugar) => {
-                if (lugar.coordenadas.lat < latMin) {
-                  latMin = lugar.coordenadas.lat;
-                } else if (lugar.coordenadas.lat > latMax){
-                  latMax = lugar.coordenadas.lat;
-                }
-
-                if (lugar.coordenadas.lng < lngMin) {
-                  lngMin = lugar.coordenadas.lng;
-                } else if (lugar.coordenadas.lng > lngMax) {
-                  lngMax = lugar.coordenadas.lng;
-                }
-
-                avLat += lugar.coordenadas.lat;
-                avLng += lugar.coordenadas.lng;
-              });
-
-              avLat /= len;
-              avLng /= len;
-
-              mapRegion = {
-                latitude: avLat,
-                longitude: avLng,
-                //latitudeDelta: (Math.abs(latMax) - Math.abs(latMin))*.5,
-                //longitudeDelta: -(Math.abs(lngMax) - Math.abs(lngMin))
-                latitudeDelta: .6,
-                longitudeDelta: .6
-              };
-
-            } else if (this.state.location) {
-              loc = this.state.location;
-
-              mapRegion = {
-                latitude: loc.lat,
-                longitude: loc.lng,
-                latitudeDelta: 0.02,
-                longitudeDelta: 0.02
-              };
-            }
-            */
-
-            this.setState({markers, lugares});
+            this.setState({markers, lugares, polyline: []});
 
           }else{
             console.log("Status failed");
@@ -148,6 +100,14 @@ export default class App extends React.Component {
     };
 
     this.autocompleteSearch = (query) => {
+      this.setState({
+        polyline: [],
+        active: true,
+        busqueda: query,
+        lugares: [],
+        buying: false,
+      });
+
       fetch('https://maps.googleapis.com/maps/api/place/autocomplete/json?key=' + API_KEY + '&input=' + query + '&components=country:hn&location=14.0723,-87.1921&radius=30000')
         .then((response) => response.json())
         .then((responseJson) => {
@@ -223,17 +183,12 @@ export default class App extends React.Component {
     };
   }
 
-  // _getLocationAsync = async () => {
-  //   let { status } = await Permissions.askAsync(Permissions.LOCATION);
-  //   if (status !== 'granted') {
-  //     this.setState({
-  //       errorMessage: 'Permission to access location was denied',
-  //     });
-  //   }
-
-  //   let location = await Location.getCurrentPositionAsync({});
-  //   this.setState({ location });
-  // };
+  componentDidMount(){
+    this.backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      this.deactivate(); // works best when the goBack is async
+      return true;
+    });
+  }
 
   async getPoly() {
     await fetch('https://maps.googleapis.com/maps/api/directions/json?key=' + API_KEY + '&origin=' + this.state.origin.lat + ',' + this.state.origin.lng + '&destination=' + this.state.destination.lat + ',' + this.state.destination.lng)
@@ -269,6 +224,18 @@ export default class App extends React.Component {
 
   onChangeDestiny(busqueda) {
     this.setState({ busqueda });
+  }
+
+  deactivate(){
+    this.setState({ active: false, buying: false });
+    Keyboard.dismiss();
+  }
+
+  activate(){
+    this.setState({
+      active: true,
+      buying: false
+    });
   }
 
   resultViewContent(){
@@ -340,7 +307,7 @@ export default class App extends React.Component {
     }else if (this.state.busqueda == "") {
       return(
         <View style={styles.welcomeView}>
-          <View flex={1} style={styles.welcomeTextView}>
+          <View style={styles.welcomeTextView}>
             <Text style={styles.welcomeText}>¿A dónde vamos hoy?</Text>
           </View>
           <View style={styles.lugaresFrecuentes}>
@@ -368,6 +335,13 @@ export default class App extends React.Component {
               />
               <Text style={styles.frecuenteText}>Test</Text>
             </View>
+          </View>
+          <View style={styles.nuevoFrecuenteView}>
+            <Button
+              title="Añadir nuevo lugar frecuente"
+              style={styles.nuevoFrecuenteButton}
+              onPress={() => console.log("nuevo frecuente pressed")}
+            />
           </View>
         </View>
       );
@@ -451,41 +425,51 @@ export default class App extends React.Component {
     return true;
   }
 
-  render() {
-    //console.log("Loaded Markers: " + this.state.markers.toString());
+  handleLongPress(location) {
+      let markers = [];
+      //console.log(location);
 
-    //console.log(this.state.polyline)
+      markers.push(
+        <MapView.Marker
+          key={location.timeStamp}
+          coordinate={{
+            latitude: location.nativeEvent.coordinate.latitude,
+            longitude: location.nativeEvent.coordinate.longitude
+          }}
+          title={"Ir a esta dirección"}
+          description={"Marcador manual"}
+          pincolor="red"
+          onPress={async () => {
+            await this.setState({
+              destination: {
+                name: "Marcador",
+                lat: location.nativeEvent.coordinate.latitude,
+                lng: location.nativeEvent.coordinate.longitude
+              },
+              buying: true,
+            });
+            await this.getPoly();
+          }}
+        />
+      );
 
-    const renderLocation = () => {
-      if (this.state.location) {
-        return (
-          <MapView.Circle
-            center={{ latitude: this.state.location.coords.latitude, longitude: this.state.location.coords.longitude }}
-            radius={this.state.location.coords.accuracy}
-            strokeColor={"rgba(3,169,244,.5)"}
-            fillColor={"rgba(3,169,244,.2)"}
-          />
-        );
-      } else {
-        return (
-          <MapView.Circle
-            center={{ latitude: 0, longitude: 0 }}
-            radius={0}
-            strokeColor={"#00000000"}
-            fillColor={"blue"}
-          />
-        );
-      }
-    }
+      this.setState({ markers });
+  }
 
+  drawPolyline(){
     var coords = [];
 
     this.state.polyline.map((point) => {
-      coords.push(
-        { latitude: point.lat, longitude: point.lng }
-      )
+      coords.push({
+        latitude: point.lat,
+        longitude: point.lng
+      })
     });
 
+    return coords;
+  }
+
+  render() {
     let text = 'Waiting..';
     if (this.state.errorMessage) {
       text = this.state.errorMessage;
@@ -498,65 +482,22 @@ export default class App extends React.Component {
     } else {
       searchInactiveAnimation.start();
     }
-    
-    //console.log(sugerencias);
-
     return (
-      <View style={{flex:1 }}>
+      <View style={{flex: 1}}>
         <MapView
-            //region={this.mapRegion}
-            /*onRegionChangeComplete={(region) => {
-                this.mapRegion.setValue(region);
-            }}*/
-            onLongPress={(location) => {
-              let markers = [];
-              console.log(location);
-
-              markers.push(
-                <MapView.Marker
-                  key={location.timeStamp}
-                  coordinate={{
-                    latitude: location.nativeEvent.coordinate.latitude,
-                    longitude: location.nativeEvent.coordinate.longitude
-                  }}
-                  title={"Ir a esta dirección"}
-                  description={"Marcador manual"}
-                  pincolor="red"
-                  onPress={async () => {
-                    await this.setState({
-                      destination: {
-                        name: "Marcador",
-                        lat: location.nativeEvent.coordinate.latitude,
-                        lng: location.nativeEvent.coordinate.longitude
-                      },
-                      buying: true,
-                    });
-                    await this.getPoly();
-                  }}
-                />
-              );
-
-              this.setState({markers});
-            }}
+            onLongPress={this.handleLongPress.bind(this)}
             showsUserLocation={true}
             followsUserLocation={true}
             ref={component => this.map = component}
             style={{ flex: 1 }}
             showsCompass={false}
-            initialRegion={{
-              latitude: 14.0723,
-              longitude: -87.1921,
-              latitudeDelta: 0.1,
-              longitudeDelta: 0.1
-            }}
+            initialRegion={INITIAL_REGION}
         >
           {this.state.markers.map(marker => marker)}
-          {renderLocation()}
-
           <MapView.Polyline
             strokeWidth={4}
             strokeColor="#03A9F4"
-            coordinates={coords}
+            coordinates={this.drawPolyline()}
           />
         </MapView>
         <View
@@ -574,12 +515,7 @@ export default class App extends React.Component {
               type="material"
               color="#212121"
               size={20}
-              onPress={
-                () => {
-                  this.setState({active: false});
-                  Keyboard.dismiss();
-                }
-              }
+              onPress={this.deactivate.bind(this)}
             />
             :
             <Icon
@@ -588,31 +524,15 @@ export default class App extends React.Component {
               type="material"
               color="#212121"
               size={20}
-              onPress={
-                () => {
-                  console.log("Menu pressed");
-                }
-              }
+              onPress={() => {console.log("Menu pressed")}}
             />
             }
             <TextInput
               style={styles.searchInput}
-              onSubmitEditing={() => {
-                this.setState({ polyline: [], active: false });
-                this.searchPlaces(this.state.busqueda);
-              }}
+              onSubmitEditing={() => {this.searchPlaces(this.state.busqueda)}}
               placeholder={"Buscar lugares"}
-              onFocus={() => {
-                this.setState({ active: true, buying: false });
-              }}
+              onFocus={this.activate.bind(this)}
               onChangeText={(busqueda) => {
-                this.setState({
-                  polyline: [],
-                  active: true,
-                  busqueda,
-                  lugares: [],
-                  buying: false,
-                });
                 this.autocompleteSearch(busqueda);
               }}
             />
@@ -625,8 +545,6 @@ export default class App extends React.Component {
           >
             <Ripple
               onPress={() => {
-                Keyboard.dismiss();
-                this.setState({ polyline: [], active: false });
                 this.searchPlaces(this.state.busqueda);
               }}
             >
@@ -660,42 +578,53 @@ const styles = StyleSheet.create({
 
   welcomeView: {
     justifyContent: "center",
-    backgroundColor:"red",
     //flex:2,
     height: "100%",
+    paddingTop: 10,
   },
 
   welcomeTextView: {
     padding: 0,
-    backgroundColor: "green",
-    height: 10,
+    height: "100%",
+    flex: 1
   },
 
   welcomeText: {
     color: "black",
     textAlign: "center",
     fontSize: 25,
+    marginTop: "auto",
+    marginBottom: "auto",
   },
 
   lugaresFrecuentes: {
     //backgroundColor: "white",
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor:"purple",
-    marginTop:0,
-    flex: 1
+    flex: 3
   },
 
   frecuenteView: {
-    backgroundColor: "blue",
-    borderColor:"yellow",
-    borderWidth:1,
     flex: 1,
+    height: "100%",
+    marginTop: 25,
+    marginBottom: "auto",
   },
 
   frecuenteText: {
     //backgroundColor: "green",
     textAlign: "center",
+  },
+
+  nuevoFrecuenteView: {
+    flex: 1,
+    padding: 15,
+    paddingLeft: 30,
+    paddingRight: 30,
+  },
+
+  nuevoFrecuenteButton: {
+    //margin
   },
 
   container: {
