@@ -1,7 +1,8 @@
 import React from 'react';
-import { StyleSheet, TextInput, View, Animated } from 'react-native';
-import { MapView, Constants, Location, Permissions } from 'expo';
+import { StyleSheet, Button, Text, TextInput, View, Animated, Easing, ScrollView, Dimensions, TouchableHighlight, Keyboard } from 'react-native';
+import { MapView, Constants, Location, Permissions, AnimatedRegion } from 'expo';
 import { Icon } from 'react-native-elements'
+import Ripple from 'react-native-material-ripple';
 
 const API_KEY = "AIzaSyApNgtxFBp0SXSHljP_xku6peNCzjTFWM4";
 const decodePolyline = require('decode-google-map-polyline');
@@ -13,9 +14,11 @@ export default class App extends React.Component {
       searchResults: {},
       markers: [],
       lugares: [],
+      lugaresAuto: [],
+      lugarActual: {},
 
       origin: { lat: 14.0481, lng: -87.1741 },
-      destination: { lat: 14.0481, lng: -87.1741 },
+      destination: { name: "Tegucigalpa", lat: 14.0481, lng: -87.1741 },
       polyline: [],
       directions: [],
 
@@ -23,33 +26,22 @@ export default class App extends React.Component {
       errorMessage: null,
 
       busqueda: "",
-
-      mapRegion: {
-        latitude: 14.0723,
-        longitude: -87.1921,
-        latitudeDelta: 0.1,
-        longitudeDelta: 0.1
-      }
+      active: false,
+      buying: false,
     };
 
     this.searchPlaces = (query) => {
-      //https://maps.googleapis.com/maps/api/place/findplacefromtext/output?parameters
-      //fetch('https://maps.googleapis.com/maps/api/place/findplacefromtext/json?key=' + API_KEY + '&fields=geometry,name,formatted_address&input=' + query + '&inputtype=textquery')
-      fetch('https://maps.googleapis.com/maps/api/place/textsearch/json?key=' + API_KEY + '&query=' + query + '&region=hn')
+      //Llamar al api
+      fetch('https://maps.googleapis.com/maps/api/place/textsearch/json?key=' + API_KEY + '&query=' + query + '&location=14.0723,-87.1921&radius=30000')
         .then((response) => response.json())
         .then((responseJson) => {
           if (responseJson.status == "OK") {
-            //console.log("JSON de lugares encontrados:\n" + JSON.stringify(responseJson));  
-
+            //Inicializar resultados de búsqueda
             var markers = [];
             var lugares = [];
             var cont = 0;
 
-            //responseJson.candidates.map((candidate) => {
             responseJson.results.map( (candidate) => {
-              //console.log("candidate " + candidate.name);
-              //console.log("latitude " + candidate.geometry.location.lat);
-              //console.log("longitude " + candidate.geometry.location.lng);
               cont++;
               markers.push(
                 <MapView.Marker
@@ -64,9 +56,11 @@ export default class App extends React.Component {
                   onPress={async () => {
                     await this.setState({
                       destination: {
+                        name: candidate.name,
                         lat: candidate.geometry.location.lat,
                         lng: candidate.geometry.location.lng,
-                      }
+                      },
+                      buying: true,
                     });
                     await this.getPoly();
                   }}
@@ -75,7 +69,7 @@ export default class App extends React.Component {
 
               lugares.push(
                 {
-                  id: cont,
+                  id: candidate.place_id,
                   nombre: candidate.name,
                   direccion: candidate.formatted_address,
                   coordenadas: {
@@ -86,20 +80,33 @@ export default class App extends React.Component {
               );
             })
 
-            let mapRegion = {
+            /*let mapRegion = {
               latitude: 14.0723,
               longitude: -87.1921,
-              latitudeDelta: 0.1,
-              longitudeDelta: 0.1
+              latitudeDelta: 0.5,
+              longitudeDelta: 0.5
             };
 
             if (this.state.lugares.length > 0) {
+              let latMax = 0, lngMax = 0, latMin = Infinity, lngMin = Infinity;
               len = this.state.lugares.length;
 
               let avLat = 0;
               let avLng = 0;
 
               this.state.lugares.map((lugar) => {
+                if (lugar.coordenadas.lat < latMin) {
+                  latMin = lugar.coordenadas.lat;
+                } else if (lugar.coordenadas.lat > latMax){
+                  latMax = lugar.coordenadas.lat;
+                }
+
+                if (lugar.coordenadas.lng < lngMin) {
+                  lngMin = lugar.coordenadas.lng;
+                } else if (lugar.coordenadas.lng > lngMax) {
+                  lngMax = lugar.coordenadas.lng;
+                }
+
                 avLat += lugar.coordenadas.lat;
                 avLng += lugar.coordenadas.lng;
               });
@@ -110,8 +117,10 @@ export default class App extends React.Component {
               mapRegion = {
                 latitude: avLat,
                 longitude: avLng,
-                latitudeDelta: 0.02,
-                longitudeDelta: 0.02
+                //latitudeDelta: (Math.abs(latMax) - Math.abs(latMin))*.5,
+                //longitudeDelta: -(Math.abs(lngMax) - Math.abs(lngMin))
+                latitudeDelta: .6,
+                longitudeDelta: .6
               };
 
             } else if (this.state.location) {
@@ -124,15 +133,88 @@ export default class App extends React.Component {
                 longitudeDelta: 0.02
               };
             }
+            */
 
-            //console.log(this.state.mapRegion);
-            this.setState({markers, lugares, mapRegion: mapRegion});
-            //this._map.animateToCoordinate(mapRegion, 1);
+            this.setState({markers, lugares});
 
           }else{
             console.log("Status failed");
           }
 
+        })
+        .catch((error) => {
+          console.error(error);
+        });
+    };
+
+    this.autocompleteSearch = (query) => {
+      fetch('https://maps.googleapis.com/maps/api/place/autocomplete/json?key=' + API_KEY + '&input=' + query + '&components=country:hn&location=14.0723,-87.1921&radius=30000')
+        .then((response) => response.json())
+        .then((responseJson) => {
+          if (responseJson.status == "OK") {
+            this.setState({lugaresAuto: responseJson.predictions});
+          } else {
+            console.log("Status failed");
+          }
+
+        })
+        .catch((error) => {
+          console.error(error);
+        });
+    };
+
+    this.placeDetails = (query) => {
+      fetch('https://maps.googleapis.com/maps/api/place/details/json?key=' + API_KEY + '&placeid=' + query)
+        .then((response) => response.json())
+        .then((responseJson) => {
+          if (responseJson.status == "OK") {
+            var markers = [];
+
+            markers.push(
+              <MapView.Marker
+                key={query}
+                coordinate={{
+                  latitude: responseJson.result.geometry.location.lat,
+                  longitude: responseJson.result.geometry.location.lng
+                }}
+                title={responseJson.result.name}
+                description={responseJson.result.formatted_address}
+                pincolor="red"
+                onPress={async () => {
+                  await this.setState({
+                    destination: {
+                      name: responseJson.result.name,
+                      lat: responseJson.result.geometry.location.lat,
+                      lng: responseJson.result.geometry.location.lng,
+                    },
+                    buying: true,
+                  });
+                  await this.getPoly();
+                }}
+              />
+            );
+
+            //console.log(responseJson.result.geometry);
+            let coords = {
+              latitude: responseJson.result.geometry.location.lat,
+              longitude: responseJson.result.geometry.location.lng,
+              // latitudeDelta: responseJson.result.geometry.viewport.southwest.lat,
+              // longitudeDelta: responseJson.result.geometry.viewport.southwest.lng
+              latitudeDelta: 0.02,
+              longitudeDelta: 0.02
+            };
+
+            this.map.animateToRegion(coords, 500);
+
+            this.setState({
+              lugarActual: responseJson.result,
+              markers,
+              active: false
+            });
+            //this._map.animateToCoordinate({ latitude: responseJson.result.geometry.location.lat, longitude: responseJson.result.geometry.location.lng}, 1);
+          } else {
+            console.log("Status failed");
+          }
 
         })
         .catch((error) => {
@@ -141,17 +223,17 @@ export default class App extends React.Component {
     };
   }
 
-  _getLocationAsync = async () => {
-    let { status } = await Permissions.askAsync(Permissions.LOCATION);
-    if (status !== 'granted') {
-      this.setState({
-        errorMessage: 'Permission to access location was denied',
-      });
-    }
+  // _getLocationAsync = async () => {
+  //   let { status } = await Permissions.askAsync(Permissions.LOCATION);
+  //   if (status !== 'granted') {
+  //     this.setState({
+  //       errorMessage: 'Permission to access location was denied',
+  //     });
+  //   }
 
-    let location = await Location.getCurrentPositionAsync({});
-    this.setState({ location });
-  };
+  //   let location = await Location.getCurrentPositionAsync({});
+  //   this.setState({ location });
+  // };
 
   async getPoly() {
     await fetch('https://maps.googleapis.com/maps/api/directions/json?key=' + API_KEY + '&origin=' + this.state.origin.lat + ',' + this.state.origin.lng + '&destination=' + this.state.destination.lat + ',' + this.state.destination.lng)
@@ -170,16 +252,16 @@ export default class App extends React.Component {
   }
 
             
-  componentDidMount(){
-    //this.locationInterval = setInterval(() => {
-      this._getLocationAsync();
+  // componentDidMount(){
+  //   this.locationInterval = setInterval(() => {
+  //     this._getLocationAsync();
 
-      if (this.state.location) {
-        this.setState({ origin: { lat: this.state.location.coords.latitude, lng: this.state.location.coords.longitude } });
-      }
+  //     if (this.state.location) {
+  //       this.setState({ origin: { lat: this.state.location.coords.latitude, lng: this.state.location.coords.longitude } });
+  //     }
 
-    //}, 5000);
-  }
+  //   }, 5000);
+  // }
 
   componentWillUnmount() {
     clearInterval(this.locationInterval);
@@ -187,6 +269,186 @@ export default class App extends React.Component {
 
   onChangeDestiny(busqueda) {
     this.setState({ busqueda });
+  }
+
+  resultViewContent(){
+    const manualHeader = (
+    <Ripple
+      style={styles.manual}
+      onPress={() => {
+        this.setState({buying: true, active: false, markers: [], polyline: [], destination: {name: this.state.busqueda}});
+        Keyboard.dismiss();
+      }}
+    >
+      <View flex={5}>
+          <Text style={styles.manualSubtitle}>Ir a esta dirección</Text>
+          <Text style={styles.manualTitle}>{this.state.busqueda}</Text>
+      </View>
+      <View flex={1}>
+          <Icon
+            name="directions"
+            size={40}
+            color="#212121"
+          />
+      </View>
+    </Ripple>
+    );
+
+    if (this.state.buying) {
+      return(
+        <View style={styles.buyView}>
+          <View flex={4} style={styles.buyConfirm}>
+            <Text style={styles.displayTitle}>Confirmar destino</Text>
+            <View style={styles.routeView}>
+              <Text style={styles.routeText}>{"Mi ubicación"}</Text>
+              <Icon
+                style={styles.searchBackIcon}
+                name="arrow-downward"
+                type="material"
+                color="gray"
+                size={20}
+                onPress={
+                  () => {
+                    this.setState({active: false});
+                    Keyboard.dismiss();
+                  }
+                }
+              />
+              <Text style={styles.routeText}>{this.state.destination.name}</Text>
+            </View>
+          </View>
+          <Text style={styles.disclaimer}>No se te cobrará nada hasta que aceptes el precio.</Text>
+          <View style={styles.fineprintView}>
+            <Text style={styles.fineprintText}>Al presionar "Pedir Precio" aceptas nuestros Términos de Servicio.</Text>
+          </View>
+          <View style={styles.buttonRow}>
+            <Button
+              style={styles.buyButton}
+              title="Cancelar"
+              color="#f44336"
+              onPress={() => this.setState({buying: false})}
+            />
+            <Button
+              style={styles.buyButton}
+              title="Pedir Precio"
+              color="#4CAF50"
+              onPress={() => console.log("pedido")}
+            />
+          </View>
+        </View>
+      );
+    }else if (this.state.busqueda == "") {
+      return(
+        <View style={styles.welcomeView}>
+          <View flex={1} style={styles.welcomeTextView}>
+            <Text style={styles.welcomeText}>¿A dónde vamos hoy?</Text>
+          </View>
+          <View style={styles.lugaresFrecuentes}>
+            <View style={styles.frecuenteView}>
+              <Icon
+                name="directions"
+                size={50}
+                color="#212121"
+              />
+              <Text style={styles.frecuenteText}>Test</Text>
+            </View>
+            <View style={styles.frecuenteView}>
+              <Icon
+                name="directions"
+                size={50}
+                color="#212121"
+              />
+              <Text style={styles.frecuenteText}>Test</Text>
+            </View>
+            <View style={styles.frecuenteView}>
+              <Icon
+                name="directions"
+                size={50}
+                color="#212121"
+              />
+              <Text style={styles.frecuenteText}>Test</Text>
+            </View>
+          </View>
+        </View>
+      );
+    }else{
+      if (this.state.lugares.length > 0) {
+        let lugares = [];
+        
+        this.state.lugares.map(suge => {
+          lugares.push(
+            <Ripple
+              key={suge.id}
+              onPress={() => {
+                this.setState({ polyline: [], buying: true, active: false, destination:{ name: suge.nombre }});
+                this.placeDetails(suge.id);
+              }}
+            >
+              <View
+                style={styles.suggest}
+              >
+                <Text style={styles.suggestTitle}>{suge.nombre}</Text>
+                <Text style={styles.suggestSubtitle}>{suge.direccion}</Text>
+              </View>
+            </Ripple>
+          );
+        });
+
+        return (
+          <View>
+            {this.state.active ? manualHeader : null}
+            <ScrollView>
+              {lugares.map(suge => suge)}
+            </ScrollView>
+          </View>
+        );
+      }else{
+        let sugerencias = [];
+
+        this.state.lugaresAuto.map(suge => {
+          sugerencias.push(
+            <Ripple
+              key={suge.place_id}
+              onPress={async () => {
+                this.setState({
+                  polyline: [],
+                  active: false,
+                  buying: true,
+                  destination: { name: suge.structured_formatting.main_text },
+                });
+                this.placeDetails(suge.place_id);
+              }}
+            >
+              <View
+                style={styles.suggest}
+              >
+                <Text style={styles.suggestTitle}>{suge.structured_formatting.main_text}</Text>
+                <Text style={styles.suggestSubtitle}>{suge.structured_formatting.secondary_text}</Text>
+              </View>
+            </Ripple>
+          );
+        });
+
+        return (
+          <View>
+            {this.state.active ? manualHeader : null}
+            <ScrollView>
+              {sugerencias.map(suge => suge)}
+            </ScrollView>
+          </View>
+        );
+      }
+    }
+  }
+
+  handleBackPress = () => {
+    this.setState({
+      polyline: [],
+      active: false,
+      busqueda: ""
+    });
+
+    return true;
   }
 
   render() {
@@ -231,96 +493,218 @@ export default class App extends React.Component {
       text = JSON.stringify(this.state.location);
     }
 
-    console.log(this.state.mapRegion);
-
-    let sugerencias = [];
-
-    this.state.lugares.map(suge => {
-      console.log(suge.id);
-      console.log(suge.direccion);
-      sugerencias.push(
-      <View key={suge.id + 100} style={styles.suggest}>
-        <Text style={styles.suggestTitle} key={suge.id}>{suge.nombre}</Text>
-        <Text style={styles.suggestSubtitle} key={suge.id}>{suge.direccion}</Text>
-      </View>
-      );
-    });
+    if (this.state.active) {
+      searchActiveAnimation.start();
+    } else {
+      searchInactiveAnimation.start();
+    }
     
-    console.log(sugerencias);
+    //console.log(sugerencias);
 
     return (
       <View style={{flex:1 }}>
-      <MapView.Animated
-          ref={component => this._map = component}
-          style={{ flex: 1 }}
-          showsCompass={false}
-          initialRegion={{
-            latitude: 14.0723,
-            longitude: -87.1921,
-            latitudeDelta: 0.1,
-            longitudeDelta: 0.1
-          }}
-          region={this.state.mapRegion}
-          >
-          
-          {
-            this.state.markers.map(marker => marker)
-          }
-          {
-            renderLocation()
-          }
+        <MapView
+            //region={this.mapRegion}
+            /*onRegionChangeComplete={(region) => {
+                this.mapRegion.setValue(region);
+            }}*/
+            onLongPress={(location) => {
+              let markers = [];
+              console.log(location);
+
+              markers.push(
+                <MapView.Marker
+                  key={location.timeStamp}
+                  coordinate={{
+                    latitude: location.nativeEvent.coordinate.latitude,
+                    longitude: location.nativeEvent.coordinate.longitude
+                  }}
+                  title={"Ir a esta dirección"}
+                  description={"Marcador manual"}
+                  pincolor="red"
+                  onPress={async () => {
+                    await this.setState({
+                      destination: {
+                        name: "Marcador",
+                        lat: location.nativeEvent.coordinate.latitude,
+                        lng: location.nativeEvent.coordinate.longitude
+                      },
+                      buying: true,
+                    });
+                    await this.getPoly();
+                  }}
+                />
+              );
+
+              this.setState({markers});
+            }}
+            showsUserLocation={true}
+            followsUserLocation={true}
+            ref={component => this.map = component}
+            style={{ flex: 1 }}
+            showsCompass={false}
+            initialRegion={{
+              latitude: 14.0723,
+              longitude: -87.1921,
+              latitudeDelta: 0.1,
+              longitudeDelta: 0.1
+            }}
+        >
+          {this.state.markers.map(marker => marker)}
+          {renderLocation()}
+
           <MapView.Polyline
             strokeWidth={4}
             strokeColor="#03A9F4"
             coordinates={coords}
           />
-        </MapView.Animated>
-        <View style={{ position: "absolute", flex: 1, width: "100%" }}>
-          <TextInput
-            onSubmitEditing={() => {
-              this.setState({ polyline: [] });
-              this.searchPlaces(this.state.busqueda);
-            }}
+        </MapView>
+        <View
+        style={this.state.active ? [styles.searchContainer, styles.whiteBack] : styles.searchContainer}
+        elevation={this.state.active ? 2 : 0}
+        >
+          <View
             elevation={3}
             style={styles.searchBar}
-            placeholder={"Buscar un lugar"}
-            onChangeText={busqueda => this.onChangeDestiny(busqueda)} />
+          >
+            {this.state.active ?
+            <Icon
+              style={styles.searchBackIcon}
+              name="arrow-back"
+              type="material"
+              color="#212121"
+              size={20}
+              onPress={
+                () => {
+                  this.setState({active: false});
+                  Keyboard.dismiss();
+                }
+              }
+            />
+            :
+            <Icon
+              style={styles.searchBackIcon}
+              name="menu"
+              type="material"
+              color="#212121"
+              size={20}
+              onPress={
+                () => {
+                  console.log("Menu pressed");
+                }
+              }
+            />
+            }
+            <TextInput
+              style={styles.searchInput}
+              onSubmitEditing={() => {
+                this.setState({ polyline: [], active: false });
+                this.searchPlaces(this.state.busqueda);
+              }}
+              placeholder={"Buscar lugares"}
+              onFocus={() => {
+                this.setState({ active: true, buying: false });
+              }}
+              onChangeText={(busqueda) => {
+                this.setState({
+                  polyline: [],
+                  active: true,
+                  busqueda,
+                  lugares: [],
+                  buying: false,
+                });
+                this.autocompleteSearch(busqueda);
+              }}
+            />
+          </View>
+          
           <View
             style={styles.iconView}
             elevation={3}
-            sm={2}
+            underlayColor="#ffc107"
           >
-            <Icon
-            iconStyle={styles.icon}
-            name="search"
-            size={30}
-            color = "white"
-            underlayColor="transparent"
-            onPress={() => {
-              this.setState({ polyline: [] });
-              this.searchPlaces(this.state.busqueda);
-            }} />
+            <Ripple
+              onPress={() => {
+                Keyboard.dismiss();
+                this.setState({ polyline: [], active: false });
+                this.searchPlaces(this.state.busqueda);
+              }}
+            >
+              <Icon
+                iconStyle={styles.icon}
+                name="search"
+                size={30}
+                color="white"
+              />
+            </Ripple>
           </View>
-          
-
         </View>
-        <ScrollView style = {styles.resultView}>
-          {sugerencias.map(suge => suge)}
-        </ScrollView>
-        {/*<View style = {{backgroundColor: "#7CFC00", flex: 1, position: "absolute", marginTop: 50}}>
-        </View>*/}
+
+        <Animated.View
+          elevation={1}
+          style={
+            [styles.resultView, animatedStyles.resultView]
+          }          
+        >
+          {this.resultViewContent()}
+        </Animated.View>
       </View>
     );
   }
 }
 
 const styles = StyleSheet.create({
+  whiteBack: {
+    backgroundColor: "white"
+  },
+
+  welcomeView: {
+    justifyContent: "center",
+    backgroundColor:"red",
+    //flex:2,
+    height: "100%",
+  },
+
+  welcomeTextView: {
+    padding: 0,
+    backgroundColor: "green",
+    height: 10,
+  },
+
+  welcomeText: {
+    color: "black",
+    textAlign: "center",
+    fontSize: 25,
+  },
+
+  lugaresFrecuentes: {
+    //backgroundColor: "white",
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor:"purple",
+    marginTop:0,
+    flex: 1
+  },
+
+  frecuenteView: {
+    backgroundColor: "blue",
+    borderColor:"yellow",
+    borderWidth:1,
+    flex: 1,
+  },
+
+  frecuenteText: {
+    //backgroundColor: "green",
+    textAlign: "center",
+  },
+
   container: {
     flex: 1,
     backgroundColor: '#fff',
     //alignItems: 'center',	
     //justifyContent: 'center',	
   },
+
   searchContainer: {
     position: "absolute",
     flex: 1,
@@ -328,20 +712,46 @@ const styles = StyleSheet.create({
     width: "100%",
     justifyContent: 'center',
     alignItems: 'center',
+    paddingBottom: 12,
+    height: '12%',
+    overflow: 'hidden',
   },
+
   resultView:{
     flex:1,
-    width:"100%",
-    backgroundColor:"red",
+    backgroundColor: "white",
     position:"absolute",
     margin:0,
-    paddingTop:10,
+    //paddingTop:10,
     bottom: 0,
-    height: '50%'
+    //height: '32%',
+    //width: "92%",    
+    //marginLeft: '4%',
+    //marginRight: '4%',
+    shadowOffset: { width: 10, height: 10, },
+    shadowOpacity: 1,
+    //borderTopLeftRadius: 10,
+    //borderTopRightRadius: 10,
+    overflow: 'hidden'
   },
+
+  resultViewShown: {
+    transform: [
+      { translateY: -(Dimensions.get('window').height * 0.56) }
+    ],
+    height: '88%',
+    width: "100%",
+    marginLeft: 0,
+    marginRight: 0,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+  },
+
   searchBar: {
     flex: 8,
-    fontSize: 18,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     borderRadius: 10,
     marginTop: 35,
     marginRight: 10,
@@ -350,10 +760,23 @@ const styles = StyleSheet.create({
     height: 40,
     borderWidth: 0,
     borderColor: "#cceeff",
+    padding: 5,
     paddingLeft: 10,
     shadowOffset: { width: 10, height: 10, },
     shadowOpacity: 1,
   },
+
+  searchInput: {
+    flex: 6,
+    fontSize: 18,
+    marginLeft: 10,
+  },
+
+  searchBackIcon: {
+    flex: 1,
+    padding: 5,
+  },
+
   iconView: {
     flex: 1,
     backgroundColor: "#ffc107",
@@ -364,20 +787,39 @@ const styles = StyleSheet.create({
     shadowOpacity: 1,
     marginTop: 35,
     marginRight: 15,
+    overflow: "hidden",
+  },
+
+  icon: {
     padding: 5,
   },
-  icon: {
-    
-  },
+
   suggest: {
     backgroundColor: "white",
-    padding: 5,
-    fontSize: 16,
-    borderWidth: 0.3,
+    padding: 10,
+    borderWidth: .3,
     borderColor: '#EEEEEE',
-    margin:0,
-    paddingTop:10,
-    height: 70
+    //margin:5,
+    //borderRadius: 10,
+    //paddingTop:10,
+    height: 80,
+    justifyContent: "center",
+  },
+
+  manual: {
+    backgroundColor: "white",
+    padding: 10,
+    fontSize: 16,
+    borderWidth: .3,
+    borderColor: '#EEEEEE',
+    //margin:5,
+    //borderRadius: 10,
+    //paddingTop:10,
+    height: 80,
+    borderBottomWidth: 3,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
 
   suggestTitle: {
@@ -389,6 +831,170 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 12,
     color: '#616161'
-  }
+  },
 
+  manualTitle: {
+    flex: 1,
+    fontSize: 18,
+  },
+
+  manualSubtitle: {
+    flex: 1,
+    fontSize: 14,
+    color: '#616161'
+  },
+
+  routeView: {
+    paddingTop: 5,
+    paddingBottom: 5,
+    flex: 4,
+  },
+
+  routeText: {
+    color: "#212121",
+    textAlign: "center",
+  },
+
+  buttonRow:{
+    flexDirection: "row",
+    justifyContent: "space-around",
+    flex: 1,
+  },
+
+  buyButton: {
+    width: "100%",
+    borderRadius: 0,
+  },
+
+  buyView: {
+    justifyContent: "space-between",
+    alignItems: "center",
+    height: "100%",
+    padding: 15,
+  },
+
+  buyConfirm: {
+
+  },
+
+  displayTitle: {
+    flex: 2,
+    fontSize: 24,
+    color: "black",
+  },
+
+  disclaimer: {
+    flex: 1,
+    color: "gray",
+  },
+
+  fineprintView: {
+    flex: 1,
+    marginTop: 5,
+  },
+
+  fineprintText :{
+    color: "lightgray",
+    fontSize: 9,
+    textAlign: "center",
+  }
 });
+
+let animatedStyles = {
+  resultView: {
+    width: new Animated.Value(Dimensions.get('window').width * .92),
+    height: new Animated.Value(Dimensions.get('window').height * .32),
+    marginLeft: new Animated.Value(Dimensions.get('window').width * .04),
+    marginRight: new Animated.Value(Dimensions.get('window').width * .04),
+    borderTopLeftRadius: new Animated.Value(10),
+    borderTopRightRadius: new Animated.Value(10),
+  },
+}
+
+let searchInactiveAnimation = Animated.parallel([
+  Animated.timing(
+    animatedStyles.resultView.width, {
+      toValue: Dimensions.get('window').width * .92,
+      duration: 250,
+      easing: Easing.bezier(0.77, 0, 0.175, 1),
+    }
+  ),
+  Animated.timing(
+    animatedStyles.resultView.height, {
+      toValue: Dimensions.get('window').height * .32,
+      duration: 250,
+      easing: Easing.bezier(0.77, 0, 0.175, 1),
+    }
+  ),
+  Animated.timing(
+    animatedStyles.resultView.marginLeft, {
+      toValue: Dimensions.get('window').width * .04,
+      duration: 250,
+      easing: Easing.bezier(0.77, 0, 0.175, 1),
+    }
+  ),
+  Animated.timing(
+    animatedStyles.resultView.marginRight, {
+      toValue: Dimensions.get('window').width * .04,
+      duration: 250,
+      easing: Easing.bezier(0.77, 0, 0.175, 1),
+    }
+  ),
+  Animated.timing(
+    animatedStyles.resultView.borderTopLeftRadius, {
+      toValue: 10,
+      duration: 250,
+      easing: Easing.bezier(0.77, 0, 0.175, 1),
+    }
+  ),
+  Animated.timing(
+    animatedStyles.resultView.borderTopRightRadius, {
+      toValue: 10,
+      duration: 250,
+      easing: Easing.bezier(0.77, 0, 0.175, 1),
+    }
+  )]);
+
+let searchActiveAnimation = Animated.parallel([
+  Animated.timing(
+    animatedStyles.resultView.width, {
+      toValue: Dimensions.get('window').width,
+      duration: 250,
+      easing: Easing.bezier(0.77, 0, 0.175, 1),
+    }
+  ),
+  Animated.timing(
+    animatedStyles.resultView.height, {
+      toValue: Dimensions.get('window').height * .88,
+      duration: 250,
+      easing: Easing.bezier(0.77, 0, 0.175, 1),
+    }
+  ),
+  Animated.timing(
+    animatedStyles.resultView.marginLeft, {
+      toValue: 0,
+      duration: 250,
+      easing: Easing.bezier(0.77, 0, 0.175, 1),
+    }
+  ),
+  Animated.timing(
+    animatedStyles.resultView.marginRight, {
+      toValue: 0,
+      duration: 250,
+      easing: Easing.bezier(0.77, 0, 0.175, 1),
+    }
+  ),
+  Animated.timing(
+    animatedStyles.resultView.borderTopLeftRadius, {
+      toValue: 0,
+      duration: 250,
+      easing: Easing.bezier(0.77, 0, 0.175, 1),
+    }
+  ),
+  Animated.timing(
+    animatedStyles.resultView.borderTopRightRadius, {
+      toValue: 0,
+      duration: 250,
+      easing: Easing.bezier(0.77, 0, 0.175, 1),
+    }
+  )]);
