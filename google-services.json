@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "503391985374",
+    "firebase_url": "https://taxiapp-sinewave.firebaseio.com",
+    "project_id": "taxiapp-sinewave",
+    "storage_bucket": "taxiapp-sinewave.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:503391985374:android:59e6195ddb40fdaa",
+        "android_client_info": {
+          "package_name": "tech.sinewave.taxi"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "503391985374-13gudcmo7ldi59a0nq60vdijnntkffr8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCShjT06lRO06BHrWfwjIiXD0eKF8h8rEU"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

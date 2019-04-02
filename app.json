@@ -22,14 +22,19 @@
     "assetBundlePatterns": [
       "**/*"
     ],
+    "android": {
+      "package": "tech.sinewave.taxi",
+      "googleServicesFile": "./google-services.json"
+    },
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "This is for showing the user's location on the map."
       }
     },
-	"packagerOpts":{
-		"nonPersistent": "--nonPersistent"
-	}
+    "packagerOpts":{
+      "nonPersistent": "--nonPersistent"
+    },
+    "primaryColor": "#ffc107"
   }
 }

@@ -1,21 +1,87 @@
 import React from 'react';
-import { StyleSheet, Button, Text, TextInput, View, Animated, Easing, ScrollView, Dimensions, TouchableHighlight, Keyboard, BackHandler } from 'react-native';
-import { MapView, Constants, Location, Permissions, AnimatedRegion } from 'expo';
-import { Icon } from 'react-native-elements'
+import firebase from '@firebase/app';
+import '@firebase/database'
+
+import { Alert, Dimensions, Text, TextInput, View, Animated, ScrollView, TouchableHighlight, Keyboard, BackHandler, ActivityIndicator } from 'react-native';
+import { MapView, Constants, Location, Permissions, Notifications } from 'expo';
+import { Button, Icon } from 'react-native-elements'
 import Ripple from 'react-native-material-ripple';
 
+import { SignIn, Waiting } from './Auth.js';
+
+let masterStyles = require("./styles.js");
+let styles = masterStyles.styles;
+let animatedStyles = masterStyles.animatedStyles;
+
+const QUOTE_STATUS_PENDING = 0;
+const QUOTE_STATUS_SUCCESS = 1;
+const QUOTE_STATUS_ERROR = 2;
+
+const FLOW_STATUS_NONE = 0;
+const FLOW_STATUS_WAITING = 1;
+const FLOW_STATUS_SUCCESS = 2;
+const FLOW_STATUS_CONFIRMING = 3;
+const FLOW_STATUS_ERROR = 4;
+
+
 const API_KEY = "AIzaSyApNgtxFBp0SXSHljP_xku6peNCzjTFWM4";
+
 const INITIAL_REGION = {
   latitude: 14.0723,
   longitude: -87.1921,
   latitudeDelta: 0.1,
   longitudeDelta: 0.1
 };
+
+firebase.initializeApp({
+  apiKey: "AIzaSyBkCxRqmYLXkznasnf-MRTROWVJcORIGcw",
+  authDomain: "taxiapp-sinewave.firebaseapp.com",
+  databaseURL: "https://taxiapp-sinewave.firebaseio.com",
+  projectId: "taxiapp-sinewave",
+  storageBucket: "taxiapp-sinewave.appspot.com",
+  messagingSenderId: "503391985374"
+});
+
+const db = firebase.database();
+
+async function registerForPushNotificationsAsync() {
+  const { status: existingStatus } = await Permissions.getAsync(
+    Permissions.NOTIFICATIONS
+  );
+  let finalStatus = existingStatus;
+
+  // only ask if permissions have not already been determined, because
+  // iOS won't necessarily prompt the user a second time.
+  if (existingStatus !== 'granted') {
+    // Android remote notification permissions are granted during the app
+    // install, so this will only ask on iOS
+    const { status } = await Permissions.askAsync(Permissions.NOTIFICATIONS);
+    finalStatus = status;
+  }
+
+  if (finalStatus !== 'granted') {
+    return null;
+  }
+
+  // Get the token that uniquely identifies this device
+  //console.log("Asking for push token...");
+  let token = "_"
+
+  try {
+    token = await Notifications.getExpoPushTokenAsync();
+  } catch (e) {
+    console.error(e);
+  }
+
+  return (token);
+}
+
 const decodePolyline = require('decode-google-map-polyline');
 
 export default class App extends React.Component {
   constructor(props) {
     super(props)
+
     this.state = {
       searchResults: {},
       markers: [],
@@ -34,7 +100,43 @@ export default class App extends React.Component {
       busqueda: "",
       active: false,
       buying: false,
+      flowStatus: FLOW_STATUS_NONE,
+      quote: {
+        mensaje: "Cotización",
+        precio: 0.0
+      },
+      userUID: "0",
+      user: "waiting"
     };
+
+    let save = (user) => {
+      this.setState({ user });
+      
+      if (user) {
+        this.setState({userUID: user.uid});
+      }
+    }
+
+    let register = () => this.registerPush();
+
+    firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+        // User is signed in.
+        /*var displayName = user.displayName;
+        var email = user.email;
+        var emailVerified = user.emailVerified;
+        var photoURL = user.photoURL;
+        var isAnonymous = user.isAnonymous;
+        var uid = user.uid;
+        var providerData = user.providerData;*/
+
+        save(user);
+        register();
+      } else {
+        save(null);
+      }
+    });
+
 
     this.searchPlaces = (query) => {
       this.deactivate();
@@ -48,7 +150,7 @@ export default class App extends React.Component {
             var lugares = [];
             var cont = 0;
 
-            responseJson.results.map( (candidate) => {
+            responseJson.results.map((candidate) => {
               cont++;
               markers.push(
                 <MapView.Marker
@@ -87,9 +189,9 @@ export default class App extends React.Component {
               );
             })
 
-            this.setState({markers, lugares, polyline: []});
+            this.setState({ markers, lugares, polyline: [] });
 
-          }else{
+          } else {
             console.log("Status failed");
           }
 
@@ -112,7 +214,7 @@ export default class App extends React.Component {
         .then((response) => response.json())
         .then((responseJson) => {
           if (responseJson.status == "OK") {
-            this.setState({lugaresAuto: responseJson.predictions});
+            this.setState({ lugaresAuto: responseJson.predictions });
           } else {
             console.log("Status failed");
           }
@@ -147,8 +249,9 @@ export default class App extends React.Component {
                       lat: responseJson.result.geometry.location.lat,
                       lng: responseJson.result.geometry.location.lng,
                     },
-                    buying: true,
+                    buying: true
                   });
+
                   await this.getPoly();
                 }}
               />
@@ -169,7 +272,15 @@ export default class App extends React.Component {
             this.setState({
               lugarActual: responseJson.result,
               markers,
-              active: false
+              active: false,
+              destination: {
+                name: responseJson.result.name,
+                address: responseJson.result.formatted_address,
+                lat: responseJson.result.geometry.location.lat,
+                lng: responseJson.result.geometry.location.lng,
+              },
+              buying: true,
+              flowStatus: FLOW_STATUS_NONE
             });
             //this._map.animateToCoordinate({ latitude: responseJson.result.geometry.location.lat, longitude: responseJson.result.geometry.location.lng}, 1);
           } else {
@@ -181,13 +292,64 @@ export default class App extends React.Component {
           console.error(error);
         });
     };
+
+    this.registerPush = this.registerPush.bind(this);
   }
 
-  componentDidMount(){
+  registerPush() {
+    registerForPushNotificationsAsync().then(
+      (pushToken) => {
+        if (pushToken) {
+          db.ref('/users/' + this.state.userUID + "/pushDevices").once('value')
+            .then((devices) => {
+              let pushTokens = [];
+              let deviceJson = devices.toJSON()
+
+              for (var token in deviceJson) {
+                //console.log("token ", token)
+
+                if (deviceJson[token] === pushToken) {
+                  console.log("Pushtoken ya existe para usuario.");
+                  return;
+                } else {
+                  pushTokens.push(deviceJson[token]);
+                }
+              };
+
+              console.log("Empujando Push Token nuevo: ", pushToken, " para usuario ", this.state.userUID, this.state.user);
+              pushTokens.push(pushToken);
+
+              db.ref('users/' + this.state.userUID).set({
+                username: "test",
+                email: "test",
+                pushDevices: pushTokens
+              });
+            });
+        } else {
+          console.error("Pushtoken nulo");
+        }
+      }
+    ).catch(
+      (e) => console.error(e)
+    );
+
+    this._notificationSubscription = Notifications.addListener(this._handleNotification.bind(this));
+
     this.backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
       this.deactivate(); // works best when the goBack is async
       return true;
     });
+  }
+
+  _handleNotification(notification) {
+    console.log("Quote recibida: ", notification)
+    this.setState({
+      quote: {
+        mensaje: notification.data.mensaje,
+        precio: notification.data.precio
+      },
+      flowStatus: FLOW_STATUS_CONFIRMING
+    })
   }
 
   async getPoly() {
@@ -206,7 +368,7 @@ export default class App extends React.Component {
       })
   }
 
-            
+
   // componentDidMount(){
   //   this.locationInterval = setInterval(() => {
   //     this._getLocationAsync();
@@ -226,43 +388,139 @@ export default class App extends React.Component {
     this.setState({ busqueda });
   }
 
-  deactivate(){
+  deactivate() {
     this.setState({ active: false, buying: false });
     Keyboard.dismiss();
   }
 
-  activate(){
+  activate() {
     this.setState({
       active: true,
       buying: false
     });
   }
 
-  resultViewContent(){
+  handleQuote() {
+    let quoteSuccess = () => {
+      this.setState({ flowStatus: FLOW_STATUS_SUCCESS });
+    }
+
+    let quoteError = () => {
+      this.setState({ flowStatus: FLOW_STATUS_ERROR });
+    }
+
+    this.setState({ flowStatus: FLOW_STATUS_WAITING });
+
+    let data = {
+      userUID: this.state.userUID,
+      destination: this.state.destination,
+      status: QUOTE_STATUS_PENDING
+    }
+
+    var key = firebase.database().ref().child('quotes').push().key;
+    var updates = {};
+    updates['/quotes/' + key] = data;
+
+    db.ref().update(updates, (error) => error ? quoteError() : quoteSuccess());
+  }
+
+  resultViewContent() {
     const manualHeader = (
-    <Ripple
-      style={styles.manual}
-      onPress={() => {
-        this.setState({buying: true, active: false, markers: [], polyline: [], destination: {name: this.state.busqueda}});
-        Keyboard.dismiss();
-      }}
-    >
-      <View flex={5}>
+      <Ripple
+        style={styles.manual}
+        onPress={() => {
+          this.setState({ buying: true, active: false, markers: [], polyline: [], destination: { name: this.state.busqueda } });
+          Keyboard.dismiss();
+        }}
+      >
+        <View flex={5}>
           <Text style={styles.manualSubtitle}>Ir a esta dirección</Text>
           <Text style={styles.manualTitle}>{this.state.busqueda}</Text>
-      </View>
-      <View flex={1}>
+        </View>
+        <View flex={1}>
           <Icon
             name="directions"
             size={40}
             color="#212121"
           />
-      </View>
-    </Ripple>
+        </View>
+      </Ripple>
     );
 
-    if (this.state.buying) {
-      return(
+    if (this.state.flowStatus != FLOW_STATUS_NONE) {
+      switch (this.state.flowStatus) {
+        case FLOW_STATUS_WAITING:
+          return (
+            <View className="fullCenter">
+              <ActivityIndicator size="large" color="#FF9800" />
+            </View>
+          );
+        case FLOW_STATUS_SUCCESS:
+          return (
+            <View style={styles.messageView}>
+              <View flex={2}>
+                <Icon
+                  name="check-circle"
+                  size={70}
+                  color="#4CAF50"
+                />
+              </View>
+              <Text flex={1}>Cotizando taxi a</Text>
+              <Text style={styles.displayTitle} flex={1}>{this.state.destination.name}</Text>
+              <Text style={styles.disclaimer} flex={1}>Recibirás en breve una notificación con el precio.</Text>
+            </View>
+          );
+        case FLOW_STATUS_CONFIRMING:
+          return (
+            <View style={styles.messageView}>
+              <View flex={2}>
+                <Icon
+                  name="local-taxi"
+                  size={70}
+                  color="#FF9800"
+                />
+              </View>
+              <Text flex={1}>Precio a {this.state.destination.name}</Text>
+              <Text style={styles.displayTitle} flex={1}>L. {this.state.quote.precio}</Text>
+              <View style={styles.buttonRow} flex={1}>
+                <Button
+                  style={styles.buyButton}
+                  title="Cancelar"
+                  color="#f44336"
+                  onPress={() => this.setState({ buying: false })}
+                />
+                <Button
+                  style={styles.buyButton}
+                  title="Pedir Taxi"
+                  color="#4CAF50"
+                  onPress={this.handleQuote.bind(this)}
+                />
+              </View>
+            </View>
+          );
+        case FLOW_STATUS_ERROR:
+          return (
+            <View style={styles.messageView}>
+              <View flex={2}>
+                <Icon
+                  name="error"
+                  size={70}
+                  color="#f44336"
+                />
+              </View>
+              <Text style={styles.displayTitle} flex={1}>Ocurrió un Error</Text>
+              <Button
+                title="Regresar"
+                onPress={() => this.setState({ buying: false, flowStatus: FLOW_STATUS_NONE })}
+              />
+            </View>
+          );
+        default:
+          break;
+      }
+
+    } else if (this.state.buying) {
+      return (
         <View style={styles.buyView}>
           <View flex={4} style={styles.buyConfirm}>
             <Text style={styles.displayTitle}>Confirmar destino</Text>
@@ -274,12 +532,6 @@ export default class App extends React.Component {
                 type="material"
                 color="gray"
                 size={20}
-                onPress={
-                  () => {
-                    this.setState({active: false});
-                    Keyboard.dismiss();
-                  }
-                }
               />
               <Text style={styles.routeText}>{this.state.destination.name}</Text>
             </View>
@@ -293,19 +545,19 @@ export default class App extends React.Component {
               style={styles.buyButton}
               title="Cancelar"
               color="#f44336"
-              onPress={() => this.setState({buying: false})}
+              onPress={() => this.setState({ buying: false })}
             />
             <Button
               style={styles.buyButton}
               title="Pedir Precio"
               color="#4CAF50"
-              onPress={() => console.log("pedido")}
+              onPress={this.handleQuote.bind(this)}
             />
           </View>
         </View>
       );
-    }else if (this.state.busqueda == "") {
-      return(
+    } else if (this.state.busqueda == "") {
+      return (
         <View style={styles.welcomeView}>
           <View style={styles.welcomeTextView}>
             <Text style={styles.welcomeText}>¿A dónde vamos hoy?</Text>
@@ -339,22 +591,22 @@ export default class App extends React.Component {
           <View style={styles.nuevoFrecuenteView}>
             <Button
               title="Añadir nuevo lugar frecuente"
-              style={styles.nuevoFrecuenteButton}
+              //style={styles.nuevoFrecuenteButton}
               onPress={() => console.log("nuevo frecuente pressed")}
             />
           </View>
         </View>
       );
-    }else{
+    } else {
       if (this.state.lugares.length > 0) {
         let lugares = [];
-        
+
         this.state.lugares.map(suge => {
           lugares.push(
             <Ripple
               key={suge.id}
               onPress={() => {
-                this.setState({ polyline: [], buying: true, active: false, destination:{ name: suge.nombre }});
+                this.setState({ polyline: [], buying: true, active: false, destination: { name: suge.nombre } });
                 this.placeDetails(suge.id);
               }}
             >
@@ -376,7 +628,7 @@ export default class App extends React.Component {
             </ScrollView>
           </View>
         );
-      }else{
+      } else {
         let sugerencias = [];
 
         this.state.lugaresAuto.map(suge => {
@@ -385,11 +637,10 @@ export default class App extends React.Component {
               key={suge.place_id}
               onPress={async () => {
                 this.setState({
-                  polyline: [],
-                  active: false,
-                  buying: true,
-                  destination: { name: suge.structured_formatting.main_text },
+                  flowStatus: FLOW_STATUS_WAITING,
+                  polyline: []
                 });
+
                 this.placeDetails(suge.place_id);
               }}
             >
@@ -426,37 +677,37 @@ export default class App extends React.Component {
   }
 
   handleLongPress(location) {
-      let markers = [];
-      //console.log(location);
+    let markers = [];
+    //console.log(location);
 
-      markers.push(
-        <MapView.Marker
-          key={location.timeStamp}
-          coordinate={{
-            latitude: location.nativeEvent.coordinate.latitude,
-            longitude: location.nativeEvent.coordinate.longitude
-          }}
-          title={"Ir a esta dirección"}
-          description={"Marcador manual"}
-          pincolor="red"
-          onPress={async () => {
-            await this.setState({
-              destination: {
-                name: "Marcador",
-                lat: location.nativeEvent.coordinate.latitude,
-                lng: location.nativeEvent.coordinate.longitude
-              },
-              buying: true,
-            });
-            await this.getPoly();
-          }}
-        />
-      );
+    markers.push(
+      <MapView.Marker
+        key={location.timeStamp}
+        coordinate={{
+          latitude: location.nativeEvent.coordinate.latitude,
+          longitude: location.nativeEvent.coordinate.longitude
+        }}
+        title={"Ir a esta dirección"}
+        description={"Marcador manual"}
+        pincolor="red"
+        onPress={async () => {
+          await this.setState({
+            destination: {
+              name: "Marcador",
+              lat: location.nativeEvent.coordinate.latitude,
+              lng: location.nativeEvent.coordinate.longitude
+            },
+            buying: true,
+          });
+          await this.getPoly();
+        }}
+      />
+    );
 
-      this.setState({ markers });
+    this.setState({ markers });
   }
 
-  drawPolyline(){
+  drawPolyline() {
     var coords = [];
 
     this.state.polyline.map((point) => {
@@ -470,460 +721,122 @@ export default class App extends React.Component {
   }
 
   render() {
-    let text = 'Waiting..';
-    if (this.state.errorMessage) {
-      text = this.state.errorMessage;
-    } else if (this.state.location) {
-      text = JSON.stringify(this.state.location);
-    }
+    if (this.state.user) {
+      if (this.state.user === "waiting") {
+        return(<Waiting/>);
+      } else {
+        let text = 'Waiting..';
+        if (this.state.errorMessage) {
+          text = this.state.errorMessage;
+        } else if (this.state.location) {
+          text = JSON.stringify(this.state.location);
+        }
 
-    if (this.state.active) {
-      searchActiveAnimation.start();
-    } else {
-      searchInactiveAnimation.start();
-    }
-    return (
-      <View style={{flex: 1}}>
-        <MapView
-            onLongPress={this.handleLongPress.bind(this)}
-            showsUserLocation={true}
-            followsUserLocation={true}
-            ref={component => this.map = component}
-            style={{ flex: 1 }}
-            showsCompass={false}
-            initialRegion={INITIAL_REGION}
-        >
-          {this.state.markers.map(marker => marker)}
-          <MapView.Polyline
-            strokeWidth={4}
-            strokeColor="#03A9F4"
-            coordinates={this.drawPolyline()}
-          />
-        </MapView>
-        <View
-        style={this.state.active ? [styles.searchContainer, styles.whiteBack] : styles.searchContainer}
-        elevation={this.state.active ? 2 : 0}
-        >
-          <View
-            elevation={3}
-            style={styles.searchBar}
-          >
-            {this.state.active ?
-            <Icon
-              style={styles.searchBackIcon}
-              name="arrow-back"
-              type="material"
-              color="#212121"
-              size={20}
-              onPress={this.deactivate.bind(this)}
-            />
-            :
-            <Icon
-              style={styles.searchBackIcon}
-              name="menu"
-              type="material"
-              color="#212121"
-              size={20}
-              onPress={() => {console.log("Menu pressed")}}
-            />
-            }
-            <TextInput
-              style={styles.searchInput}
-              onSubmitEditing={() => {this.searchPlaces(this.state.busqueda)}}
-              placeholder={"Buscar lugares"}
-              onFocus={this.activate.bind(this)}
-              onChangeText={(busqueda) => {
-                this.autocompleteSearch(busqueda);
-              }}
-            />
-          </View>
-          
-          <View
-            style={styles.iconView}
-            elevation={3}
-            underlayColor="#ffc107"
-          >
-            <Ripple
-              onPress={() => {
-                this.searchPlaces(this.state.busqueda);
+        if (this.state.active) {
+          masterStyles.searchActiveAnimation.start();
+        } else {
+          masterStyles.searchInactiveAnimation.start();
+        }
+        return (
+          <View style={{ flex: 1 }}>
+            <MapView
+              onLongPress={this.handleLongPress.bind(this)}
+              showsUserLocation={true}
+              followsUserLocation={true}
+              ref={component => this.map = component}
+              style={{ flex: 1 }}
+              showsCompass={false}
+              initialRegion={INITIAL_REGION}
+              mapPadding={{
+                top: Dimensions.get('window').height * .15,
+                right: 0,
+                bottom: Dimensions.get('window').height * .35,
+                left: 0
               }}
             >
-              <Icon
-                iconStyle={styles.icon}
-                name="search"
-                size={30}
-                color="white"
+              {this.state.markers.map(marker => marker)}
+              <MapView.Polyline
+                strokeWidth={4}
+                strokeColor="#03A9F4"
+                coordinates={this.drawPolyline()}
               />
-            </Ripple>
+            </MapView>
+            <View
+              style={this.state.active ? [styles.searchContainer, styles.whiteBack] : styles.searchContainer}
+              elevation={this.state.active ? 2 : 0}
+            >
+              <View
+                elevation={3}
+                style={styles.searchBar}
+              >
+                {this.state.active ?
+                  <Icon
+                    style={styles.searchBackIcon}
+                    name="arrow-back"
+                    type="material"
+                    color="#212121"
+                    size={20}
+                    onPress={this.deactivate.bind(this)}
+                  />
+                  :
+                  <Icon
+                    style={styles.searchBackIcon}
+                    name="menu"
+                    type="material"
+                    color="#212121"
+                    size={20}
+                    onPress={() => { console.log("Menu pressed") }}
+                  />
+                }
+                <TextInput
+                  editable={this.state.flowStatus === FLOW_STATUS_NONE}
+                  style={styles.searchInput}
+                  onSubmitEditing={() => { this.searchPlaces(this.state.busqueda) }}
+                  placeholder={this.state.flowStatus === FLOW_STATUS_NONE ? "Buscar lugares" : "Esperando respuesta..."}
+                  onFocus={this.activate.bind(this)}
+                  onChangeText={(busqueda) => {
+                    this.autocompleteSearch(busqueda);
+                  }}
+                  returnKeyType="search"
+                />
+              </View>
+
+              <View
+                style={styles.iconView}
+                elevation={3}
+                underlayColor="#ffc107"
+              >
+                <Ripple
+                  onPress={this.state.flowStatus === FLOW_STATUS_NONE ?
+                    () => this.searchPlaces(this.state.busqueda) :
+                    () => Alert.alert("Error", "Solo puedes pedir un taxi a la vez.")
+                  }
+                >
+                  <Icon
+                    iconStyle={styles.icon}
+                    name="search"
+                    size={30}
+                    color="white"
+                  />
+                </Ripple>
+              </View>
+            </View>
+
+            <Animated.View
+              elevation={1}
+              style={
+                [styles.resultView, animatedStyles.resultView]
+              }
+            >
+              {this.resultViewContent()}
+            </Animated.View>
           </View>
-        </View>
-
-        <Animated.View
-          elevation={1}
-          style={
-            [styles.resultView, animatedStyles.resultView]
-          }          
-        >
-          {this.resultViewContent()}
-        </Animated.View>
-      </View>
-    );
+        );
+      }
+    } else {
+      return (
+        <SignIn />
+      );
+    }
   }
 }
-
-const styles = StyleSheet.create({
-  whiteBack: {
-    backgroundColor: "white"
-  },
-
-  welcomeView: {
-    justifyContent: "center",
-    //flex:2,
-    height: "100%",
-    paddingTop: 10,
-  },
-
-  welcomeTextView: {
-    padding: 0,
-    height: "100%",
-    flex: 1
-  },
-
-  welcomeText: {
-    color: "black",
-    textAlign: "center",
-    fontSize: 25,
-    marginTop: "auto",
-    marginBottom: "auto",
-  },
-
-  lugaresFrecuentes: {
-    //backgroundColor: "white",
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 3
-  },
-
-  frecuenteView: {
-    flex: 1,
-    height: "100%",
-    marginTop: 25,
-    marginBottom: "auto",
-  },
-
-  frecuenteText: {
-    //backgroundColor: "green",
-    textAlign: "center",
-  },
-
-  nuevoFrecuenteView: {
-    flex: 1,
-    padding: 15,
-    paddingLeft: 30,
-    paddingRight: 30,
-  },
-
-  nuevoFrecuenteButton: {
-    //margin
-  },
-
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    //alignItems: 'center',	
-    //justifyContent: 'center',	
-  },
-
-  searchContainer: {
-    position: "absolute",
-    flex: 1,
-    flexDirection: "row",
-    width: "100%",
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingBottom: 12,
-    height: '12%',
-    overflow: 'hidden',
-  },
-
-  resultView:{
-    flex:1,
-    backgroundColor: "white",
-    position:"absolute",
-    margin:0,
-    //paddingTop:10,
-    bottom: 0,
-    //height: '32%',
-    //width: "92%",    
-    //marginLeft: '4%',
-    //marginRight: '4%',
-    shadowOffset: { width: 10, height: 10, },
-    shadowOpacity: 1,
-    //borderTopLeftRadius: 10,
-    //borderTopRightRadius: 10,
-    overflow: 'hidden'
-  },
-
-  resultViewShown: {
-    transform: [
-      { translateY: -(Dimensions.get('window').height * 0.56) }
-    ],
-    height: '88%',
-    width: "100%",
-    marginLeft: 0,
-    marginRight: 0,
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 0,
-  },
-
-  searchBar: {
-    flex: 8,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderRadius: 10,
-    marginTop: 35,
-    marginRight: 10,
-    marginLeft: 15,
-    backgroundColor: "#ffffff",
-    height: 40,
-    borderWidth: 0,
-    borderColor: "#cceeff",
-    padding: 5,
-    paddingLeft: 10,
-    shadowOffset: { width: 10, height: 10, },
-    shadowOpacity: 1,
-  },
-
-  searchInput: {
-    flex: 6,
-    fontSize: 18,
-    marginLeft: 10,
-  },
-
-  searchBackIcon: {
-    flex: 1,
-    padding: 5,
-  },
-
-  iconView: {
-    flex: 1,
-    backgroundColor: "#ffc107",
-    borderRadius: 15,
-    borderColor: "#cceeff",
-    borderWidth: 0,
-    shadowOffset: { width: 10, height: 10, },
-    shadowOpacity: 1,
-    marginTop: 35,
-    marginRight: 15,
-    overflow: "hidden",
-  },
-
-  icon: {
-    padding: 5,
-  },
-
-  suggest: {
-    backgroundColor: "white",
-    padding: 10,
-    borderWidth: .3,
-    borderColor: '#EEEEEE',
-    //margin:5,
-    //borderRadius: 10,
-    //paddingTop:10,
-    height: 80,
-    justifyContent: "center",
-  },
-
-  manual: {
-    backgroundColor: "white",
-    padding: 10,
-    fontSize: 16,
-    borderWidth: .3,
-    borderColor: '#EEEEEE',
-    //margin:5,
-    //borderRadius: 10,
-    //paddingTop:10,
-    height: 80,
-    borderBottomWidth: 3,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  suggestTitle: {
-    flex: 1,
-    fontSize: 16,
-  },
-
-  suggestSubtitle: {
-    flex: 1,
-    fontSize: 12,
-    color: '#616161'
-  },
-
-  manualTitle: {
-    flex: 1,
-    fontSize: 18,
-  },
-
-  manualSubtitle: {
-    flex: 1,
-    fontSize: 14,
-    color: '#616161'
-  },
-
-  routeView: {
-    paddingTop: 5,
-    paddingBottom: 5,
-    flex: 4,
-  },
-
-  routeText: {
-    color: "#212121",
-    textAlign: "center",
-  },
-
-  buttonRow:{
-    flexDirection: "row",
-    justifyContent: "space-around",
-    flex: 1,
-  },
-
-  buyButton: {
-    width: "100%",
-    borderRadius: 0,
-  },
-
-  buyView: {
-    justifyContent: "space-between",
-    alignItems: "center",
-    height: "100%",
-    padding: 15,
-  },
-
-  buyConfirm: {
-
-  },
-
-  displayTitle: {
-    flex: 2,
-    fontSize: 24,
-    color: "black",
-  },
-
-  disclaimer: {
-    flex: 1,
-    color: "gray",
-  },
-
-  fineprintView: {
-    flex: 1,
-    marginTop: 5,
-  },
-
-  fineprintText :{
-    color: "lightgray",
-    fontSize: 9,
-    textAlign: "center",
-  }
-});
-
-let animatedStyles = {
-  resultView: {
-    width: new Animated.Value(Dimensions.get('window').width * .92),
-    height: new Animated.Value(Dimensions.get('window').height * .32),
-    marginLeft: new Animated.Value(Dimensions.get('window').width * .04),
-    marginRight: new Animated.Value(Dimensions.get('window').width * .04),
-    borderTopLeftRadius: new Animated.Value(10),
-    borderTopRightRadius: new Animated.Value(10),
-  },
-}
-
-let searchInactiveAnimation = Animated.parallel([
-  Animated.timing(
-    animatedStyles.resultView.width, {
-      toValue: Dimensions.get('window').width * .92,
-      duration: 250,
-      easing: Easing.bezier(0.77, 0, 0.175, 1),
-    }
-  ),
-  Animated.timing(
-    animatedStyles.resultView.height, {
-      toValue: Dimensions.get('window').height * .32,
-      duration: 250,
-      easing: Easing.bezier(0.77, 0, 0.175, 1),
-    }
-  ),
-  Animated.timing(
-    animatedStyles.resultView.marginLeft, {
-      toValue: Dimensions.get('window').width * .04,
-      duration: 250,
-      easing: Easing.bezier(0.77, 0, 0.175, 1),
-    }
-  ),
-  Animated.timing(
-    animatedStyles.resultView.marginRight, {
-      toValue: Dimensions.get('window').width * .04,
-      duration: 250,
-      easing: Easing.bezier(0.77, 0, 0.175, 1),
-    }
-  ),
-  Animated.timing(
-    animatedStyles.resultView.borderTopLeftRadius, {
-      toValue: 10,
-      duration: 250,
-      easing: Easing.bezier(0.77, 0, 0.175, 1),
-    }
-  ),
-  Animated.timing(
-    animatedStyles.resultView.borderTopRightRadius, {
-      toValue: 10,
-      duration: 250,
-      easing: Easing.bezier(0.77, 0, 0.175, 1),
-    }
-  )]);
-
-let searchActiveAnimation = Animated.parallel([
-  Animated.timing(
-    animatedStyles.resultView.width, {
-      toValue: Dimensions.get('window').width,
-      duration: 250,
-      easing: Easing.bezier(0.77, 0, 0.175, 1),
-    }
-  ),
-  Animated.timing(
-    animatedStyles.resultView.height, {
-      toValue: Dimensions.get('window').height * .88,
-      duration: 250,
-      easing: Easing.bezier(0.77, 0, 0.175, 1),
-    }
-  ),
-  Animated.timing(
-    animatedStyles.resultView.marginLeft, {
-      toValue: 0,
-      duration: 250,
-      easing: Easing.bezier(0.77, 0, 0.175, 1),
-    }
-  ),
-  Animated.timing(
-    animatedStyles.resultView.marginRight, {
-      toValue: 0,
-      duration: 250,
-      easing: Easing.bezier(0.77, 0, 0.175, 1),
-    }
-  ),
-  Animated.timing(
-    animatedStyles.resultView.borderTopLeftRadius, {
-      toValue: 0,
-      duration: 250,
-      easing: Easing.bezier(0.77, 0, 0.175, 1),
-    }
-  ),
-  Animated.timing(
-    animatedStyles.resultView.borderTopRightRadius, {
-      toValue: 0,
-      duration: 250,
-      easing: Easing.bezier(0.77, 0, 0.175, 1),
-    }
-  )]);
