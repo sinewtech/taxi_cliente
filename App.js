@@ -1,13 +1,25 @@
-import React from 'react';
-import firebase from '@firebase/app';
-import '@firebase/database'
+import React from "react";
+import firebase from "@firebase/app";
+import "@firebase/database";
 
-import { Alert, Dimensions, Text, TextInput, View, Animated, ScrollView, TouchableHighlight, Keyboard, BackHandler, ActivityIndicator } from 'react-native';
-import { MapView, Constants, Location, Permissions, Notifications } from 'expo';
-import { Button, Icon } from 'react-native-elements'
-import Ripple from 'react-native-material-ripple';
+import {
+  Alert,
+  Dimensions,
+  Text,
+  TextInput,
+  View,
+  Animated,
+  ScrollView,
+  TouchableHighlight,
+  Keyboard,
+  BackHandler,
+  ActivityIndicator,
+} from "react-native";
+import { MapView, Constants, Location, Permissions, Notifications } from "expo";
+import { Button, Icon } from "react-native-elements";
+import Ripple from "react-native-material-ripple";
 
-import { SignIn, Waiting } from './Auth.js';
+import { SignIn, Waiting } from "./Auth.js";
 
 let masterStyles = require("./styles.js");
 let styles = masterStyles.styles;
@@ -23,14 +35,13 @@ const FLOW_STATUS_SUCCESS = 2;
 const FLOW_STATUS_CONFIRMING = 3;
 const FLOW_STATUS_ERROR = 4;
 
-
 const API_KEY = "AIzaSyApNgtxFBp0SXSHljP_xku6peNCzjTFWM4";
 
 const INITIAL_REGION = {
   latitude: 14.0723,
   longitude: -87.1921,
   latitudeDelta: 0.1,
-  longitudeDelta: 0.1
+  longitudeDelta: 0.1,
 };
 
 firebase.initializeApp({
@@ -39,33 +50,31 @@ firebase.initializeApp({
   databaseURL: "https://taxiapp-sinewave.firebaseio.com",
   projectId: "taxiapp-sinewave",
   storageBucket: "taxiapp-sinewave.appspot.com",
-  messagingSenderId: "503391985374"
+  messagingSenderId: "503391985374",
 });
 
 const db = firebase.database();
 
 async function registerForPushNotificationsAsync() {
-  const { status: existingStatus } = await Permissions.getAsync(
-    Permissions.NOTIFICATIONS
-  );
+  const { status: existingStatus } = await Permissions.getAsync(Permissions.NOTIFICATIONS);
   let finalStatus = existingStatus;
 
   // only ask if permissions have not already been determined, because
   // iOS won't necessarily prompt the user a second time.
-  if (existingStatus !== 'granted') {
+  if (existingStatus !== "granted") {
     // Android remote notification permissions are granted during the app
     // install, so this will only ask on iOS
     const { status } = await Permissions.askAsync(Permissions.NOTIFICATIONS);
     finalStatus = status;
   }
 
-  if (finalStatus !== 'granted') {
+  if (finalStatus !== "granted") {
     return null;
   }
 
   // Get the token that uniquely identifies this device
   //console.log("Asking for push token...");
-  let token = "_"
+  let token = "_";
 
   try {
     token = await Notifications.getExpoPushTokenAsync();
@@ -73,14 +82,14 @@ async function registerForPushNotificationsAsync() {
     console.error(e);
   }
 
-  return (token);
+  return token;
 }
 
-const decodePolyline = require('decode-google-map-polyline');
+const decodePolyline = require("decode-google-map-polyline");
 
 export default class App extends React.Component {
   constructor(props) {
-    super(props)
+    super(props);
 
     this.state = {
       searchResults: {},
@@ -103,23 +112,23 @@ export default class App extends React.Component {
       flowStatus: FLOW_STATUS_NONE,
       quote: {
         mensaje: "Cotización",
-        precio: 0.0
+        precio: 0.0,
       },
       userUID: "0",
-      user: "waiting"
+      user: "waiting",
     };
 
-    let save = (user) => {
+    let save = user => {
       this.setState({ user });
-      
+
       if (user) {
-        this.setState({userUID: user.uid});
+        this.setState({ userUID: user.uid });
       }
-    }
+    };
 
     let register = () => this.registerPush();
 
-    firebase.auth().onAuthStateChanged((user) => {
+    firebase.auth().onAuthStateChanged(user => {
       if (user) {
         // User is signed in.
         /*var displayName = user.displayName;
@@ -137,27 +146,32 @@ export default class App extends React.Component {
       }
     });
 
-
-    this.searchPlaces = (query) => {
+    this.searchPlaces = query => {
       this.deactivate();
       //Llamar al api
-      fetch('https://maps.googleapis.com/maps/api/place/textsearch/json?key=' + API_KEY + '&query=' + query + '&location=14.0723,-87.1921&radius=30000')
-        .then((response) => response.json())
-        .then((responseJson) => {
+      fetch(
+        "https://maps.googleapis.com/maps/api/place/textsearch/json?key=" +
+          API_KEY +
+          "&query=" +
+          query +
+          "&location=14.0723,-87.1921&radius=30000"
+      )
+        .then(response => response.json())
+        .then(responseJson => {
           if (responseJson.status == "OK") {
             //Inicializar resultados de búsqueda
             var markers = [];
             var lugares = [];
             var cont = 0;
 
-            responseJson.results.map((candidate) => {
+            responseJson.results.map(candidate => {
               cont++;
               markers.push(
                 <MapView.Marker
                   key={cont}
                   coordinate={{
                     latitude: candidate.geometry.location.lat,
-                    longitude: candidate.geometry.location.lng
+                    longitude: candidate.geometry.location.lng,
                   }}
                   title={candidate.name}
                   description={candidate.formatted_address}
@@ -176,32 +190,28 @@ export default class App extends React.Component {
                 />
               );
 
-              lugares.push(
-                {
-                  id: candidate.place_id,
-                  nombre: candidate.name,
-                  direccion: candidate.formatted_address,
-                  coordenadas: {
-                    lat: candidate.geometry.location.lat,
-                    lng: candidate.geometry.location.lng
-                  }
-                }
-              );
-            })
+              lugares.push({
+                id: candidate.place_id,
+                nombre: candidate.name,
+                direccion: candidate.formatted_address,
+                coordenadas: {
+                  lat: candidate.geometry.location.lat,
+                  lng: candidate.geometry.location.lng,
+                },
+              });
+            });
 
             this.setState({ markers, lugares, polyline: [] });
-
           } else {
             console.log("Status failed");
           }
-
         })
-        .catch((error) => {
+        .catch(error => {
           console.error(error);
         });
     };
 
-    this.autocompleteSearch = (query) => {
+    this.autocompleteSearch = query => {
       this.setState({
         polyline: [],
         active: true,
@@ -210,25 +220,35 @@ export default class App extends React.Component {
         buying: false,
       });
 
-      fetch('https://maps.googleapis.com/maps/api/place/autocomplete/json?key=' + API_KEY + '&input=' + query + '&components=country:hn&location=14.0723,-87.1921&radius=30000')
-        .then((response) => response.json())
-        .then((responseJson) => {
+      fetch(
+        "https://maps.googleapis.com/maps/api/place/autocomplete/json?key=" +
+          API_KEY +
+          "&input=" +
+          query +
+          "&components=country:hn&location=14.0723,-87.1921&radius=30000"
+      )
+        .then(response => response.json())
+        .then(responseJson => {
           if (responseJson.status == "OK") {
             this.setState({ lugaresAuto: responseJson.predictions });
           } else {
             console.log("Status failed");
           }
-
         })
-        .catch((error) => {
+        .catch(error => {
           console.error(error);
         });
     };
 
-    this.placeDetails = (query) => {
-      fetch('https://maps.googleapis.com/maps/api/place/details/json?key=' + API_KEY + '&placeid=' + query)
-        .then((response) => response.json())
-        .then((responseJson) => {
+    this.placeDetails = query => {
+      fetch(
+        "https://maps.googleapis.com/maps/api/place/details/json?key=" +
+          API_KEY +
+          "&placeid=" +
+          query
+      )
+        .then(response => response.json())
+        .then(responseJson => {
           if (responseJson.status == "OK") {
             var markers = [];
 
@@ -237,7 +257,7 @@ export default class App extends React.Component {
                 key={query}
                 coordinate={{
                   latitude: responseJson.result.geometry.location.lat,
-                  longitude: responseJson.result.geometry.location.lng
+                  longitude: responseJson.result.geometry.location.lng,
                 }}
                 title={responseJson.result.name}
                 description={responseJson.result.formatted_address}
@@ -249,7 +269,7 @@ export default class App extends React.Component {
                       lat: responseJson.result.geometry.location.lat,
                       lng: responseJson.result.geometry.location.lng,
                     },
-                    buying: true
+                    buying: true,
                   });
 
                   await this.getPoly();
@@ -264,7 +284,7 @@ export default class App extends React.Component {
               // latitudeDelta: responseJson.result.geometry.viewport.southwest.lat,
               // longitudeDelta: responseJson.result.geometry.viewport.southwest.lng
               latitudeDelta: 0.02,
-              longitudeDelta: 0.02
+              longitudeDelta: 0.02,
             };
 
             this.map.animateToRegion(coords, 500);
@@ -280,15 +300,14 @@ export default class App extends React.Component {
                 lng: responseJson.result.geometry.location.lng,
               },
               buying: true,
-              flowStatus: FLOW_STATUS_NONE
+              flowStatus: FLOW_STATUS_NONE,
             });
             //this._map.animateToCoordinate({ latitude: responseJson.result.geometry.location.lat, longitude: responseJson.result.geometry.location.lng}, 1);
           } else {
             console.log("Status failed");
           }
-
         })
-        .catch((error) => {
+        .catch(error => {
           console.error(error);
         });
     };
@@ -297,13 +316,14 @@ export default class App extends React.Component {
   }
 
   registerPush() {
-    registerForPushNotificationsAsync().then(
-      (pushToken) => {
+    registerForPushNotificationsAsync()
+      .then(pushToken => {
         if (pushToken) {
-          db.ref('/users/' + this.state.userUID + "/pushDevices").once('value')
-            .then((devices) => {
+          db.ref("/users/" + this.state.userUID + "/pushDevices")
+            .once("value")
+            .then(devices => {
               let pushTokens = [];
-              let deviceJson = devices.toJSON()
+              let deviceJson = devices.toJSON();
 
               for (var token in deviceJson) {
                 //console.log("token ", token)
@@ -314,48 +334,63 @@ export default class App extends React.Component {
                 } else {
                   pushTokens.push(deviceJson[token]);
                 }
-              };
+              }
 
-              console.log("Empujando Push Token nuevo: ", pushToken, " para usuario ", this.state.userUID, this.state.user);
+              console.log(
+                "Empujando Push Token nuevo: ",
+                pushToken,
+                " para usuario ",
+                this.state.userUID,
+                this.state.user
+              );
               pushTokens.push(pushToken);
 
-              db.ref('users/' + this.state.userUID).set({
+              db.ref("users/" + this.state.userUID).set({
                 username: "test",
                 email: "test",
-                pushDevices: pushTokens
+                pushDevices: pushTokens,
               });
             });
         } else {
           console.error("Pushtoken nulo");
         }
-      }
-    ).catch(
-      (e) => console.error(e)
-    );
+      })
+      .catch(e => console.error(e));
 
     this._notificationSubscription = Notifications.addListener(this._handleNotification.bind(this));
 
-    this.backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+    this.backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
       this.deactivate(); // works best when the goBack is async
       return true;
     });
   }
 
   _handleNotification(notification) {
-    console.log("Quote recibida: ", notification)
+    console.log("Quote recibida: ", notification);
     this.setState({
       quote: {
         mensaje: notification.data.mensaje,
-        precio: notification.data.precio
+        precio: notification.data.precio,
       },
-      flowStatus: FLOW_STATUS_CONFIRMING
-    })
+      flowStatus: FLOW_STATUS_CONFIRMING,
+    });
   }
 
   async getPoly() {
-    await fetch('https://maps.googleapis.com/maps/api/directions/json?key=' + API_KEY + '&origin=' + this.state.origin.lat + ',' + this.state.origin.lng + '&destination=' + this.state.destination.lat + ',' + this.state.destination.lng)
-      .then((response) => response.json())
-      .then((responseJson) => {
+    await fetch(
+      "https://maps.googleapis.com/maps/api/directions/json?key=" +
+        API_KEY +
+        "&origin=" +
+        this.state.origin.lat +
+        "," +
+        this.state.origin.lng +
+        "&destination=" +
+        this.state.destination.lat +
+        "," +
+        this.state.destination.lng
+    )
+      .then(response => response.json())
+      .then(responseJson => {
         //console.log(JSON.stringify(responseJson));
         if (responseJson.status == "OK") {
           // console.log(responseJson.routes[0].overview_polyline);
@@ -365,9 +400,8 @@ export default class App extends React.Component {
         } else {
           console.log("Status failed");
         }
-      })
+      });
   }
-
 
   // componentDidMount(){
   //   this.locationInterval = setInterval(() => {
@@ -396,32 +430,36 @@ export default class App extends React.Component {
   activate() {
     this.setState({
       active: true,
-      buying: false
+      buying: false,
     });
   }
 
   handleQuote() {
     let quoteSuccess = () => {
       this.setState({ flowStatus: FLOW_STATUS_SUCCESS });
-    }
+    };
 
     let quoteError = () => {
       this.setState({ flowStatus: FLOW_STATUS_ERROR });
-    }
+    };
 
     this.setState({ flowStatus: FLOW_STATUS_WAITING });
 
     let data = {
       userUID: this.state.userUID,
       destination: this.state.destination,
-      status: QUOTE_STATUS_PENDING
-    }
+      status: QUOTE_STATUS_PENDING,
+    };
 
-    var key = firebase.database().ref().child('quotes').push().key;
+    var key = firebase
+      .database()
+      .ref()
+      .child("quotes")
+      .push().key;
     var updates = {};
-    updates['/quotes/' + key] = data;
+    updates["/quotes/" + key] = data;
 
-    db.ref().update(updates, (error) => error ? quoteError() : quoteSuccess());
+    db.ref().update(updates, error => (error ? quoteError() : quoteSuccess()));
   }
 
   resultViewContent() {
@@ -429,20 +467,21 @@ export default class App extends React.Component {
       <Ripple
         style={styles.manual}
         onPress={() => {
-          this.setState({ buying: true, active: false, markers: [], polyline: [], destination: { name: this.state.busqueda } });
+          this.setState({
+            buying: true,
+            active: false,
+            markers: [],
+            polyline: [],
+            destination: { name: this.state.busqueda },
+          });
           Keyboard.dismiss();
-        }}
-      >
+        }}>
         <View flex={5}>
           <Text style={styles.manualSubtitle}>Ir a esta dirección</Text>
           <Text style={styles.manualTitle}>{this.state.busqueda}</Text>
         </View>
         <View flex={1}>
-          <Icon
-            name="directions"
-            size={40}
-            color="#212121"
-          />
+          <Icon name="directions" size={40} color="#212121" />
         </View>
       </Ripple>
     );
@@ -459,29 +498,27 @@ export default class App extends React.Component {
           return (
             <View style={styles.messageView}>
               <View flex={2}>
-                <Icon
-                  name="check-circle"
-                  size={70}
-                  color="#4CAF50"
-                />
+                <Icon name="check-circle" size={70} color="#4CAF50" />
               </View>
               <Text flex={1}>Cotizando taxi a</Text>
-              <Text style={styles.displayTitle} flex={1}>{this.state.destination.name}</Text>
-              <Text style={styles.disclaimer} flex={1}>Recibirás en breve una notificación con el precio.</Text>
+              <Text style={styles.displayTitle} flex={1}>
+                {this.state.destination.name}
+              </Text>
+              <Text style={styles.disclaimer} flex={1}>
+                Recibirás en breve una notificación con el precio.
+              </Text>
             </View>
           );
         case FLOW_STATUS_CONFIRMING:
           return (
             <View style={styles.messageView}>
               <View flex={2}>
-                <Icon
-                  name="local-taxi"
-                  size={70}
-                  color="#FF9800"
-                />
+                <Icon name="local-taxi" size={70} color="#FF9800" />
               </View>
               <Text flex={1}>Precio a {this.state.destination.name}</Text>
-              <Text style={styles.displayTitle} flex={1}>L. {this.state.quote.precio}</Text>
+              <Text style={styles.displayTitle} flex={1}>
+                L. {this.state.quote.precio}
+              </Text>
               <View style={styles.buttonRow} flex={1}>
                 <Button
                   style={styles.buyButton}
@@ -502,13 +539,11 @@ export default class App extends React.Component {
           return (
             <View style={styles.messageView}>
               <View flex={2}>
-                <Icon
-                  name="error"
-                  size={70}
-                  color="#f44336"
-                />
+                <Icon name="error" size={70} color="#f44336" />
               </View>
-              <Text style={styles.displayTitle} flex={1}>Ocurrió un Error</Text>
+              <Text style={styles.displayTitle} flex={1}>
+                Ocurrió un Error
+              </Text>
               <Button
                 title="Regresar"
                 onPress={() => this.setState({ buying: false, flowStatus: FLOW_STATUS_NONE })}
@@ -518,7 +553,6 @@ export default class App extends React.Component {
         default:
           break;
       }
-
     } else if (this.state.buying) {
       return (
         <View style={styles.buyView}>
@@ -538,7 +572,9 @@ export default class App extends React.Component {
           </View>
           <Text style={styles.disclaimer}>No se te cobrará nada hasta que aceptes el precio.</Text>
           <View style={styles.fineprintView}>
-            <Text style={styles.fineprintText}>Al presionar "Pedir Precio" aceptas nuestros Términos de Servicio.</Text>
+            <Text style={styles.fineprintText}>
+              Al presionar "Pedir Precio" aceptas nuestros Términos de Servicio.
+            </Text>
           </View>
           <View style={styles.buttonRow}>
             <Button
@@ -564,27 +600,15 @@ export default class App extends React.Component {
           </View>
           <View style={styles.lugaresFrecuentes}>
             <View style={styles.frecuenteView}>
-              <Icon
-                name="directions"
-                size={50}
-                color="#212121"
-              />
+              <Icon name="directions" size={50} color="#212121" />
               <Text style={styles.frecuenteText}>Test</Text>
             </View>
             <View style={styles.frecuenteView}>
-              <Icon
-                name="directions"
-                size={50}
-                color="#212121"
-              />
+              <Icon name="directions" size={50} color="#212121" />
               <Text style={styles.frecuenteText}>Test</Text>
             </View>
             <View style={styles.frecuenteView}>
-              <Icon
-                name="directions"
-                size={50}
-                color="#212121"
-              />
+              <Icon name="directions" size={50} color="#212121" />
               <Text style={styles.frecuenteText}>Test</Text>
             </View>
           </View>
@@ -606,13 +630,15 @@ export default class App extends React.Component {
             <Ripple
               key={suge.id}
               onPress={() => {
-                this.setState({ polyline: [], buying: true, active: false, destination: { name: suge.nombre } });
+                this.setState({
+                  polyline: [],
+                  buying: true,
+                  active: false,
+                  destination: { name: suge.nombre },
+                });
                 this.placeDetails(suge.id);
-              }}
-            >
-              <View
-                style={styles.suggest}
-              >
+              }}>
+              <View style={styles.suggest}>
                 <Text style={styles.suggestTitle}>{suge.nombre}</Text>
                 <Text style={styles.suggestSubtitle}>{suge.direccion}</Text>
               </View>
@@ -623,9 +649,7 @@ export default class App extends React.Component {
         return (
           <View>
             {this.state.active ? manualHeader : null}
-            <ScrollView>
-              {lugares.map(suge => suge)}
-            </ScrollView>
+            <ScrollView>{lugares.map(suge => suge)}</ScrollView>
           </View>
         );
       } else {
@@ -638,17 +662,16 @@ export default class App extends React.Component {
               onPress={async () => {
                 this.setState({
                   flowStatus: FLOW_STATUS_WAITING,
-                  polyline: []
+                  polyline: [],
                 });
 
                 this.placeDetails(suge.place_id);
-              }}
-            >
-              <View
-                style={styles.suggest}
-              >
+              }}>
+              <View style={styles.suggest}>
                 <Text style={styles.suggestTitle}>{suge.structured_formatting.main_text}</Text>
-                <Text style={styles.suggestSubtitle}>{suge.structured_formatting.secondary_text}</Text>
+                <Text style={styles.suggestSubtitle}>
+                  {suge.structured_formatting.secondary_text}
+                </Text>
               </View>
             </Ripple>
           );
@@ -657,9 +680,7 @@ export default class App extends React.Component {
         return (
           <View>
             {this.state.active ? manualHeader : null}
-            <ScrollView>
-              {sugerencias.map(suge => suge)}
-            </ScrollView>
+            <ScrollView>{sugerencias.map(suge => suge)}</ScrollView>
           </View>
         );
       }
@@ -670,11 +691,11 @@ export default class App extends React.Component {
     this.setState({
       polyline: [],
       active: false,
-      busqueda: ""
+      busqueda: "",
     });
 
     return true;
-  }
+  };
 
   handleLongPress(location) {
     let markers = [];
@@ -685,7 +706,7 @@ export default class App extends React.Component {
         key={location.timeStamp}
         coordinate={{
           latitude: location.nativeEvent.coordinate.latitude,
-          longitude: location.nativeEvent.coordinate.longitude
+          longitude: location.nativeEvent.coordinate.longitude,
         }}
         title={"Ir a esta dirección"}
         description={"Marcador manual"}
@@ -695,7 +716,7 @@ export default class App extends React.Component {
             destination: {
               name: "Marcador",
               lat: location.nativeEvent.coordinate.latitude,
-              lng: location.nativeEvent.coordinate.longitude
+              lng: location.nativeEvent.coordinate.longitude,
             },
             buying: true,
           });
@@ -710,11 +731,11 @@ export default class App extends React.Component {
   drawPolyline() {
     var coords = [];
 
-    this.state.polyline.map((point) => {
+    this.state.polyline.map(point => {
       coords.push({
         latitude: point.lat,
-        longitude: point.lng
-      })
+        longitude: point.lng,
+      });
     });
 
     return coords;
@@ -723,9 +744,9 @@ export default class App extends React.Component {
   render() {
     if (this.state.user) {
       if (this.state.user === "waiting") {
-        return(<Waiting/>);
+        return <Waiting />;
       } else {
-        let text = 'Waiting..';
+        let text = "Waiting..";
         if (this.state.errorMessage) {
           text = this.state.errorMessage;
         } else if (this.state.location) {
@@ -743,17 +764,16 @@ export default class App extends React.Component {
               onLongPress={this.handleLongPress.bind(this)}
               showsUserLocation={true}
               followsUserLocation={true}
-              ref={component => this.map = component}
+              ref={component => (this.map = component)}
               style={{ flex: 1 }}
               showsCompass={false}
               initialRegion={INITIAL_REGION}
               mapPadding={{
-                top: Dimensions.get('window').height * .15,
+                top: Dimensions.get("window").height * 0.15,
                 right: 0,
-                bottom: Dimensions.get('window').height * .35,
-                left: 0
-              }}
-            >
+                bottom: Dimensions.get("window").height * 0.35,
+                left: 0,
+              }}>
               {this.state.markers.map(marker => marker)}
               <MapView.Polyline
                 strokeWidth={4}
@@ -762,14 +782,14 @@ export default class App extends React.Component {
               />
             </MapView>
             <View
-              style={this.state.active ? [styles.searchContainer, styles.whiteBack] : styles.searchContainer}
-              elevation={this.state.active ? 2 : 0}
-            >
-              <View
-                elevation={3}
-                style={styles.searchBar}
-              >
-                {this.state.active ?
+              style={
+                this.state.active
+                  ? [styles.searchContainer, styles.whiteBack]
+                  : styles.searchContainer
+              }
+              elevation={this.state.active ? 2 : 0}>
+              <View elevation={3} style={styles.searchBar}>
+                {this.state.active ? (
                   <Icon
                     style={styles.searchBackIcon}
                     name="arrow-back"
@@ -778,65 +798,57 @@ export default class App extends React.Component {
                     size={20}
                     onPress={this.deactivate.bind(this)}
                   />
-                  :
+                ) : (
                   <Icon
                     style={styles.searchBackIcon}
                     name="menu"
                     type="material"
                     color="#212121"
                     size={20}
-                    onPress={() => { console.log("Menu pressed") }}
+                    onPress={() => {
+                      console.log("Menu pressed");
+                    }}
                   />
-                }
+                )}
                 <TextInput
                   editable={this.state.flowStatus === FLOW_STATUS_NONE}
                   style={styles.searchInput}
-                  onSubmitEditing={() => { this.searchPlaces(this.state.busqueda) }}
-                  placeholder={this.state.flowStatus === FLOW_STATUS_NONE ? "Buscar lugares" : "Esperando respuesta..."}
+                  onSubmitEditing={() => {
+                    this.searchPlaces(this.state.busqueda);
+                  }}
+                  placeholder={
+                    this.state.flowStatus === FLOW_STATUS_NONE
+                      ? "Buscar lugares"
+                      : "Esperando respuesta..."
+                  }
                   onFocus={this.activate.bind(this)}
-                  onChangeText={(busqueda) => {
+                  onChangeText={busqueda => {
                     this.autocompleteSearch(busqueda);
                   }}
                   returnKeyType="search"
                 />
               </View>
 
-              <View
-                style={styles.iconView}
-                elevation={3}
-                underlayColor="#ffc107"
-              >
+              <View style={styles.iconView} elevation={3} underlayColor="#ffc107">
                 <Ripple
-                  onPress={this.state.flowStatus === FLOW_STATUS_NONE ?
-                    () => this.searchPlaces(this.state.busqueda) :
-                    () => Alert.alert("Error", "Solo puedes pedir un taxi a la vez.")
-                  }
-                >
-                  <Icon
-                    iconStyle={styles.icon}
-                    name="search"
-                    size={30}
-                    color="white"
-                  />
+                  onPress={
+                    this.state.flowStatus === FLOW_STATUS_NONE
+                      ? () => this.searchPlaces(this.state.busqueda)
+                      : () => Alert.alert("Error", "Solo puedes pedir un taxi a la vez.")
+                  }>
+                  <Icon iconStyle={styles.icon} name="search" size={30} color="white" />
                 </Ripple>
               </View>
             </View>
 
-            <Animated.View
-              elevation={1}
-              style={
-                [styles.resultView, animatedStyles.resultView]
-              }
-            >
+            <Animated.View elevation={1} style={[styles.resultView, animatedStyles.resultView]}>
               {this.resultViewContent()}
             </Animated.View>
           </View>
         );
       }
     } else {
-      return (
-        <SignIn />
-      );
+      return <SignIn />;
     }
   }
 }
