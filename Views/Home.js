@@ -319,7 +319,7 @@ export default class Home extends React.Component {
     registerForPushNotificationsAsync()
       .then(pushToken => {
         if (pushToken) {
-          db.ref("/users/" + this.state.userUID + "/pushDevices")
+          db.ref("users/clients/" + this.state.userUID + "/pushDevices")
             .once("value")
             .then(devices => {
               let pushTokens = [];
@@ -345,7 +345,7 @@ export default class Home extends React.Component {
               );
               pushTokens.push(pushToken);
 
-              db.ref("users/" + this.state.userUID).set({
+              db.ref("users/clients/" + this.state.userUID).set({
                 username: "test",
                 email: "test",
                 pushDevices: pushTokens,
