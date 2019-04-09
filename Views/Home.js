@@ -453,7 +453,11 @@ export default class Home extends React.Component {
 
     let data = {
       userUID: this.state.userUID,
-      origin: this.state.location,
+      origin: {
+        address: "Ubicación del Cliente",
+        lat: this.state.location.coords.latitude,
+        lng: this.state.location.coords.longitude,
+      },
       destination: this.state.destination,
       status: QUOTE_STATUS_PENDING,
     };
