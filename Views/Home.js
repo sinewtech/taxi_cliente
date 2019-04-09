@@ -313,6 +313,7 @@ export default class Home extends React.Component {
     };
 
     this.registerPush = this.registerPush.bind(this);
+    this.handleQuote = this.handleQuote.bind(this);
   }
 
   registerPush() {
@@ -363,6 +364,8 @@ export default class Home extends React.Component {
       this.deactivate(); // works best when the goBack is async
       return true;
     });
+
+    this._getLocationAsync = this._getLocationAsync.bind(this);
   }
 
   _handleNotification(notification) {
@@ -403,16 +406,17 @@ export default class Home extends React.Component {
       });
   }
 
-  // componentDidMount(){
-  //   this.locationInterval = setInterval(() => {
-  //     this._getLocationAsync();
+  _getLocationAsync = async () => {
+    let { status } = await Permissions.askAsync(Permissions.LOCATION);
+    if (status !== 'granted') {
+      this.setState({
+        locationError: 'Permission to access location was denied',
+      });
+    }
 
-  //     if (this.state.location) {
-  //       this.setState({ origin: { lat: this.state.location.coords.latitude, lng: this.state.location.coords.longitude } });
-  //     }
-
-  //   }, 5000);
-  // }
+    let location = await Location.getCurrentPositionAsync({});
+    this.setState({ location });
+  };
 
   componentWillUnmount() {
     clearInterval(this.locationInterval);
@@ -434,7 +438,7 @@ export default class Home extends React.Component {
     });
   }
 
-  handleQuote() {
+  async handleQuote() {
     let quoteSuccess = () => {
       this.setState({ flowStatus: FLOW_STATUS_SUCCESS });
     };
@@ -445,11 +449,16 @@ export default class Home extends React.Component {
 
     this.setState({ flowStatus: FLOW_STATUS_WAITING });
 
+    await this._getLocationAsync();
+
     let data = {
       userUID: this.state.userUID,
+      origin: this.state.location,
       destination: this.state.destination,
       status: QUOTE_STATUS_PENDING,
     };
+
+    console.log("Enviando orden", data);
 
     var key = firebase
       .database()
@@ -530,7 +539,7 @@ export default class Home extends React.Component {
                   style={styles.buyButton}
                   title="Pedir Taxi"
                   color="#4CAF50"
-                  onPress={this.handleQuote.bind(this)}
+                  onPress={this.handleQuote}
                 />
               </View>
             </View>
@@ -587,7 +596,7 @@ export default class Home extends React.Component {
               style={styles.buyButton}
               title="Pedir Precio"
               color="#4CAF50"
-              onPress={this.handleQuote.bind(this)}
+              onPress={this.handleQuote}
             />
           </View>
         </View>
