@@ -33,7 +33,8 @@ const FLOW_STATUS_NONE = 0;
 const FLOW_STATUS_WAITING = 1;
 const FLOW_STATUS_SUCCESS = 2;
 const FLOW_STATUS_CONFIRMING = 3;
-const FLOW_STATUS_ERROR = 4;
+const FLOW_STATUS_CONFIRMED = 4;
+const FLOW_STATUS_ERROR = 5;
 
 const API_KEY = "AIzaSyApNgtxFBp0SXSHljP_xku6peNCzjTFWM4";
 
@@ -314,6 +315,7 @@ export default class Home extends React.Component {
 
     this.registerPush = this.registerPush.bind(this);
     this.handleQuote = this.handleQuote.bind(this);
+    this.handleConfirm = this.handleConfirm.bind(this);
   }
 
   registerPush() {
@@ -475,6 +477,10 @@ export default class Home extends React.Component {
     db.ref().update(updates, error => (error ? quoteError() : quoteSuccess()));
   }
 
+  handleConfirm(){
+    this.setState({ flowStatus: FLOW_STATUS_CONFIRMED });
+  }
+
   resultViewContent() {
     const manualHeader = (
       <Ripple
@@ -543,7 +549,7 @@ export default class Home extends React.Component {
                   style={styles.buyButton}
                   title="Pedir Taxi"
                   color="#4CAF50"
-                  onPress={this.handleQuote}
+                  onPress={this.handleConfirm}
                 />
               </View>
             </View>
@@ -561,6 +567,21 @@ export default class Home extends React.Component {
                 title="Regresar"
                 onPress={() => this.setState({ buying: false, flowStatus: FLOW_STATUS_NONE })}
               />
+            </View>
+          );
+        case FLOW_STATUS_CONFIRMED:
+          return (
+            <View style={styles.messageView}>
+              <View flex={2}>
+                <Icon name="check-circle" size={70} color="#4CAF50" />
+              </View>
+              <Text flex={1}>¡Éxito!</Text>
+              <Text style={styles.displayTitle} flex={1}>
+                Tu Génesis ya va en camino.
+              </Text>
+              <Text style={styles.disclaimer} flex={1}>
+                ¡Gracias por tu preferencia!
+              </Text>
             </View>
           );
         default:
@@ -613,16 +634,22 @@ export default class Home extends React.Component {
           </View>
           <View style={styles.lugaresFrecuentes}>
             <View style={styles.frecuenteView}>
-              <Icon name="directions" size={50} color="#212121" />
-              <Text style={styles.frecuenteText}>Test</Text>
+            <Ripple>
+              <Icon name="home" size={50} color="#FFB300" />
+              <Text style={styles.frecuenteText}>Casa</Text>
+            </Ripple>
             </View>
             <View style={styles.frecuenteView}>
-              <Icon name="directions" size={50} color="#212121" />
-              <Text style={styles.frecuenteText}>Test</Text>
+            <Ripple>
+              <Icon name="work" size={50} color="#FFB300" />
+              <Text style={styles.frecuenteText}>Trabajo</Text>
+            </Ripple>
             </View>
             <View style={styles.frecuenteView}>
-              <Icon name="directions" size={50} color="#212121" />
-              <Text style={styles.frecuenteText}>Test</Text>
+            <Ripple>
+              <Icon name="book" size={50} color="#FFB300" />
+              <Text style={styles.frecuenteText}>Colegio</Text>
+            </Ripple>
             </View>
           </View>
           <View style={styles.nuevoFrecuenteView}>
