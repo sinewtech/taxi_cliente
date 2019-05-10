@@ -1,6 +1,6 @@
 import React from "react";
 import firebase from "@firebase/app";
-import "@firebase/database";
+import "@firebase/firestore";
 
 import {
   Alert,
@@ -10,12 +10,11 @@ import {
   View,
   Animated,
   ScrollView,
-  TouchableHighlight,
   Keyboard,
   BackHandler,
   ActivityIndicator,
 } from "react-native";
-import { MapView, Constants, Location, Permissions, Notifications } from "expo";
+import { MapView, Permissions, Notifications } from "expo";
 import { Button, Icon } from "react-native-elements";
 import Ripple from "react-native-material-ripple";
 
@@ -53,7 +52,7 @@ firebase.initializeApp({
   messagingSenderId: "503391985374",
 });
 
-const db = firebase.database();
+const db = firebase.firestore();
 
 async function registerForPushNotificationsAsync() {
   const { status: existingStatus } = await Permissions.getAsync(Permissions.NOTIFICATIONS);
@@ -90,7 +89,6 @@ const decodePolyline = require("decode-google-map-polyline");
 export default class Home extends React.Component {
   constructor(props) {
     super(props);
-
     this.state = {
       searchResults: {},
       markers: [],
@@ -138,7 +136,7 @@ export default class Home extends React.Component {
         var isAnonymous = user.isAnonymous;
         var uid = user.uid;
         var providerData = user.providerData;*/
-
+        console.log("aqui toy :v");
         save(user);
         register();
       } else {
@@ -318,38 +316,37 @@ export default class Home extends React.Component {
   registerPush() {
     registerForPushNotificationsAsync()
       .then(pushToken => {
+        console.log(pushToken);
         if (pushToken) {
-          db.ref("users/clients/" + this.state.userUID + "/pushDevices")
-            .once("value")
-            .then(devices => {
+          console.log("entre :V");
+          db.collection("clients")
+            .doc(this.state.userUID)
+            .get()
+            .then(DocumentSnapshot => {
               let pushTokens = [];
-              let deviceJson = devices.toJSON();
-
-              for (var token in deviceJson) {
-                //console.log("token ", token)
-
-                if (deviceJson[token] === pushToken) {
-                  console.log("Pushtoken ya existe para usuario.");
-                  return;
-                } else {
-                  pushTokens.push(deviceJson[token]);
+              if (DocumentSnapshot.exists) {
+                let deviceJson = DocumentSnapshot.data()["pushDevices"];
+                for (var token in deviceJson) {
+                  if (deviceJson[token] === pushToken) {
+                    console.log("Pushtoken ya existe para usuario.");
+                    return;
+                  } else {
+                    pushTokens.push(deviceJson[token]);
+                  }
                 }
+              } else {
+                pushTokens.push(pushToken);
               }
-
-              console.log(
-                "Empujando Push Token nuevo: ",
-                pushToken,
-                " para usuario ",
-                this.state.userUID,
-                this.state.user
-              );
-              pushTokens.push(pushToken);
-
-              db.ref("users/clients/" + this.state.userUID).set({
-                username: "test",
-                email: "test",
-                pushDevices: pushTokens,
-              });
+              db.collection("clients")
+                .doc(this.state.userUID)
+                .set({
+                  email: this.state.user.email,
+                  username: "test",
+                  pushDevices: pushTokens,
+                });
+            })
+            .catch(e => {
+              console.log(e);
             });
         } else {
           console.error("Pushtoken nulo");
@@ -402,18 +399,6 @@ export default class Home extends React.Component {
         }
       });
   }
-
-  // componentDidMount(){
-  //   this.locationInterval = setInterval(() => {
-  //     this._getLocationAsync();
-
-  //     if (this.state.location) {
-  //       this.setState({ origin: { lat: this.state.location.coords.latitude, lng: this.state.location.coords.longitude } });
-  //     }
-
-  //   }, 5000);
-  // }
-
   componentWillUnmount() {
     clearInterval(this.locationInterval);
   }
@@ -459,7 +444,10 @@ export default class Home extends React.Component {
     var updates = {};
     updates["/quotes/" + key] = data;
 
-    db.ref().update(updates, error => (error ? quoteError() : quoteSuccess()));
+    firebase
+      .database()
+      .ref()
+      .update(updates, error => (error ? quoteError() : quoteSuccess()));
   }
 
   resultViewContent() {
