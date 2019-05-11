@@ -313,16 +313,14 @@ export default class Home extends React.Component {
     this.handleConfirm = this.handleConfirm.bind(this);
   }
   _getLocationAsync = async () => {
-    console.log("pido permiso");
     let { status } = await Permissions.askAsync(Permissions.LOCATION);
     if (status !== "granted") {
       this.setState({
         errorMessage: "Permission to access location was denied",
       });
     }
-    console.log("me lo dieron :v");
+    console.log(data);
     let location = await Location.getCurrentPositionAsync({});
-    console.log("me estan dando la location", location);
     this.setState({ location });
   };
   registerPush() {
@@ -434,7 +432,6 @@ export default class Home extends React.Component {
   }
 
   async handleQuote() {
-    console.log("pedi");
     let quoteSuccess = () => {
       this.setState({ flowStatus: FLOW_STATUS_SUCCESS });
     };
@@ -444,16 +441,22 @@ export default class Home extends React.Component {
     };
 
     this.setState({ flowStatus: FLOW_STATUS_WAITING });
+    alert("wenas");
+    // await this._getLocationAsync();
 
-    await this._getLocationAsync();
-
+    // let data = {
+    //   userUID: this.state.userUID,
+    //   origin: {
+    //     address: "Ubicación del Cliente",
+    //     lat: this.state.location.coords.latitude,
+    //     lng: this.state.location.coords.longitude,
+    //   },
+    //   destination: this.state.destination,
+    //   status: QUOTE_STATUS_PENDING,
+    // };
     let data = {
       userUID: this.state.userUID,
-      origin: {
-        address: "Ubicación del Cliente",
-        lat: this.state.location.coords.latitude,
-        lng: this.state.location.coords.longitude,
-      },
+      origin: this.state.origin,
       destination: this.state.destination,
       status: QUOTE_STATUS_PENDING,
     };
