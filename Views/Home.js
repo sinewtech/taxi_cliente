@@ -43,7 +43,6 @@ const INITIAL_REGION = {
   latitudeDelta: 0.1,
   longitudeDelta: 0.1,
 };
-
 firebase.initializeApp({
   apiKey: "AIzaSyBkCxRqmYLXkznasnf-MRTROWVJcORIGcw",
   authDomain: "taxiapp-sinewave.firebaseapp.com",
@@ -52,7 +51,6 @@ firebase.initializeApp({
   storageBucket: "taxiapp-sinewave.appspot.com",
   messagingSenderId: "503391985374",
 });
-
 const db = firebase.firestore();
 
 async function registerForPushNotificationsAsync() {
