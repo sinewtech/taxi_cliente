@@ -135,7 +135,6 @@ export default class Home extends React.Component {
         var isAnonymous = user.isAnonymous;
         var uid = user.uid;
         var providerData = user.providerData;*/
-        console.log("aqui toy :v");
         save(user);
         register();
       } else {
@@ -314,14 +313,16 @@ export default class Home extends React.Component {
     this.handleConfirm = this.handleConfirm.bind(this);
   }
   _getLocationAsync = async () => {
+    console.log("pido permiso");
     let { status } = await Permissions.askAsync(Permissions.LOCATION);
     if (status !== "granted") {
       this.setState({
         errorMessage: "Permission to access location was denied",
       });
     }
-
+    console.log("me lo dieron :v");
     let location = await Location.getCurrentPositionAsync({});
+    console.log("me estan dando la location", location);
     this.setState({ location });
   };
   registerPush() {
@@ -433,6 +434,7 @@ export default class Home extends React.Component {
   }
 
   async handleQuote() {
+    console.log("pedi");
     let quoteSuccess = () => {
       this.setState({ flowStatus: FLOW_STATUS_SUCCESS });
     };

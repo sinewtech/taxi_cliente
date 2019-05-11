@@ -29,3 +29,31 @@ location.post("/", (req, res) => {
   res.end("fin");
 });
 exports.location = functions.https.onRequest(location);
+
+exports.operator_notification = functions.database.ref("quotes/{uid}").onCreate(snapshot => {
+  admin
+    .database()
+    .ref()
+    .child("Notification_Data/")
+    .once("value", snap => {
+      var message = {
+        data: {
+          title: "Nuevo Pedido",
+          body: "Alguien ocupa un precio",
+        },
+        token: snap.exportVal().token,
+      };
+      return admin
+        .messaging()
+        .send(message)
+        .then(response => {
+          // Response is a message ID string.
+          console.log("Successfully sent message:", response);
+          return 0;
+        })
+        .catch(error => {
+          console.log("Error sending message:", error);
+          return 0;
+        });
+    });
+});
