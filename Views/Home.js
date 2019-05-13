@@ -319,7 +319,7 @@ export default class Home extends React.Component {
         errorMessage: "Permission to access location was denied",
       });
     }
-    console.log(data);
+    console.log("colo me mame");
     let location = await Location.getCurrentPositionAsync({});
     this.setState({ location });
   };
@@ -442,24 +442,24 @@ export default class Home extends React.Component {
 
     this.setState({ flowStatus: FLOW_STATUS_WAITING });
     alert("wenas");
-    // await this._getLocationAsync();
+    await this._getLocationAsync();
 
-    // let data = {
-    //   userUID: this.state.userUID,
-    //   origin: {
-    //     address: "Ubicación del Cliente",
-    //     lat: this.state.location.coords.latitude,
-    //     lng: this.state.location.coords.longitude,
-    //   },
-    //   destination: this.state.destination,
-    //   status: QUOTE_STATUS_PENDING,
-    // };
     let data = {
       userUID: this.state.userUID,
-      origin: this.state.origin,
+      origin: {
+        address: "Ubicación del Cliente",
+        lat: this.state.location.coords.latitude,
+        lng: this.state.location.coords.longitude,
+      },
       destination: this.state.destination,
       status: QUOTE_STATUS_PENDING,
     };
+    // let data = {
+    //   userUID: this.state.userUID,
+    //   origin: this.state.origin,
+    //   destination: this.state.destination,
+    //   status: QUOTE_STATUS_PENDING,
+    // };
 
     console.log("Enviando orden", data);
 
