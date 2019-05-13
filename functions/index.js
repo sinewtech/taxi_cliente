@@ -57,3 +57,37 @@ exports.operator_notification = functions.database.ref("quotes/{uid}").onCreate(
         });
     });
 });
+
+exports.download_url_generator = functions.storage.object().onFinalize(object => {
+  const contentType = object.contentType;
+  if (!contentType.startsWith("image/")) {
+    return console.log("This is not an image.");
+  }
+  const bucket = admin.storage().bucket();
+  const file = bucket.file(object.name);
+  let data = object.name.split("/");
+  const filename = data.pop();
+  const user = data.pop();
+  const options = {
+    action: "read",
+    expires: "03-17-2025",
+  };
+  // Get a signed URL for the file
+  return file.getSignedUrl(options).then(results => {
+    const url = results[0];
+    let update;
+    if (filename === "lateralcar") {
+      update = { lateralcar: url };
+    } else if (filename === "profile") {
+      update = { profile: url };
+    } else {
+      update = { profilecar: url };
+    }
+    admin
+      .firestore()
+      .collection("drivers")
+      .doc(user)
+      .update(update);
+    return true;
+  });
+});
