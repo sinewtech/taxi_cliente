@@ -18,7 +18,7 @@ import { MapView, Permissions, Notifications } from "expo";
 import { Button, Icon } from "react-native-elements";
 import Ripple from "react-native-material-ripple";
 
-import { SignIn, Waiting } from "../Components/Auth.js";
+import Waiting from "../Components/Waiting.js";
 
 let masterStyles = require("../styles.js");
 let styles = masterStyles.styles;
@@ -888,8 +888,6 @@ export default class Home extends React.Component {
           </View>
         );
       }
-    } else {
-      return <SignIn />;
     }
   }
 }
