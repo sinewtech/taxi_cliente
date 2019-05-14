@@ -15,11 +15,15 @@ import {
   BackHandler,
   ActivityIndicator,
 } from "react-native";
+
 import { MapView, Constants, Location, Permissions, Notifications } from "expo";
 import { Button, Icon } from "react-native-elements";
 import Ripple from "react-native-material-ripple";
 
 import { SignIn, Waiting } from "../Components/Auth.js";
+import Bienvenida from "../Components/Bienvenida.js";
+import Recientes from "../Components/Recientes.js";
+import Cotizar, { CotizarExito, CotizarConfirmar, CotizarError, CotizarAceptar } from "../Components/Cotizar.js";
 
 let masterStyles = require("../styles.js");
 let styles = masterStyles.styles;
@@ -32,9 +36,10 @@ const QUOTE_STATUS_ERROR = 2;
 const FLOW_STATUS_NONE = 0;
 const FLOW_STATUS_WAITING = 1;
 const FLOW_STATUS_SUCCESS = 2;
-const FLOW_STATUS_CONFIRMING = 3;
-const FLOW_STATUS_CONFIRMED = 4;
-const FLOW_STATUS_ERROR = 5;
+const FLOW_STATUS_QUOTING = 3;
+const FLOW_STATUS_CONFIRMING = 4;
+const FLOW_STATUS_CONFIRMED = 5;
+const FLOW_STATUS_ERROR = 6;
 
 const API_KEY = "AIzaSyApNgtxFBp0SXSHljP_xku6peNCzjTFWM4";
 
@@ -60,11 +65,7 @@ async function registerForPushNotificationsAsync() {
   const { status: existingStatus } = await Permissions.getAsync(Permissions.NOTIFICATIONS);
   let finalStatus = existingStatus;
 
-  // only ask if permissions have not already been determined, because
-  // iOS won't necessarily prompt the user a second time.
   if (existingStatus !== "granted") {
-    // Android remote notification permissions are granted during the app
-    // install, so this will only ask on iOS
     const { status } = await Permissions.askAsync(Permissions.NOTIFICATIONS);
     finalStatus = status;
   }
@@ -73,8 +74,6 @@ async function registerForPushNotificationsAsync() {
     return null;
   }
 
-  // Get the token that uniquely identifies this device
-  //console.log("Asking for push token...");
   let token = "_";
 
   try {
@@ -109,7 +108,6 @@ export default class Home extends React.Component {
 
       busqueda: "",
       active: false,
-      buying: false,
       flowStatus: FLOW_STATUS_NONE,
       quote: {
         mensaje: "Cotización",
@@ -147,176 +145,186 @@ export default class Home extends React.Component {
       }
     });
 
-    this.searchPlaces = query => {
-      this.deactivate();
-      //Llamar al api
-      fetch(
-        "https://maps.googleapis.com/maps/api/place/textsearch/json?key=" +
-          API_KEY +
-          "&query=" +
-          query +
-          "&location=14.0723,-87.1921&radius=30000"
-      )
-        .then(response => response.json())
-        .then(responseJson => {
-          if (responseJson.status == "OK") {
-            //Inicializar resultados de búsqueda
-            var markers = [];
-            var lugares = [];
-            var cont = 0;
+    this.registerPush = this.registerPush.bind(this);
+    this.handleQuote = this.handleQuote.bind(this);
+    this.handleConfirm = this.handleConfirm.bind(this);
+    this.searchPlaces = this.searchPlaces.bind(this);
+    this.placeDetails = this.placeDetails.bind(this);
+    this.autocompleteSearch = this.autocompleteSearch.bind(this);
+    this.wait = this.wait.bind(this);
+  }
 
-            responseJson.results.map(candidate => {
-              cont++;
-              markers.push(
-                <MapView.Marker
-                  key={cont}
-                  coordinate={{
-                    latitude: candidate.geometry.location.lat,
-                    longitude: candidate.geometry.location.lng,
-                  }}
-                  title={candidate.name}
-                  description={candidate.formatted_address}
-                  pincolor="red"
-                  onPress={async () => {
-                    await this.setState({
-                      destination: {
-                        name: candidate.name,
-                        lat: candidate.geometry.location.lat,
-                        lng: candidate.geometry.location.lng,
-                      },
-                      buying: true,
-                    });
-                    await this.getPoly();
-                  }}
-                />
-              );
+  wait() {
+    this.setState({ flowStatus: FLOW_STATUS_WAITING });
+  }
 
-              lugares.push({
-                id: candidate.place_id,
-                nombre: candidate.name,
-                direccion: candidate.formatted_address,
-                coordenadas: {
-                  lat: candidate.geometry.location.lat,
-                  lng: candidate.geometry.location.lng,
-                },
-              });
-            });
+  searchPlaces(query) {
+    this.deactivate();
+    //Llamar al api
+    fetch(
+      "https://maps.googleapis.com/maps/api/place/textsearch/json?key=" +
+      API_KEY +
+      "&query=" +
+      query +
+      "&location=14.0723,-87.1921&radius=30000"
+    )
+      .then(response => response.json())
+      .then(responseJson => {
+        if (responseJson.status == "OK") {
+          //Inicializar resultados de búsqueda
+          var markers = [];
+          var lugares = [];
+          var cont = 0;
 
-            this.setState({ markers, lugares, polyline: [] });
-          } else {
-            console.log("Status failed");
-          }
-        })
-        .catch(error => {
-          console.error(error);
-        });
-    };
-
-    this.autocompleteSearch = query => {
-      this.setState({
-        polyline: [],
-        active: true,
-        busqueda: query,
-        lugares: [],
-        buying: false,
-      });
-
-      fetch(
-        "https://maps.googleapis.com/maps/api/place/autocomplete/json?key=" +
-          API_KEY +
-          "&input=" +
-          query +
-          "&components=country:hn&location=14.0723,-87.1921&radius=30000"
-      )
-        .then(response => response.json())
-        .then(responseJson => {
-          if (responseJson.status == "OK") {
-            this.setState({ lugaresAuto: responseJson.predictions });
-          } else {
-            console.log("Status failed");
-          }
-        })
-        .catch(error => {
-          console.error(error);
-        });
-    };
-
-    this.placeDetails = query => {
-      fetch(
-        "https://maps.googleapis.com/maps/api/place/details/json?key=" +
-          API_KEY +
-          "&placeid=" +
-          query
-      )
-        .then(response => response.json())
-        .then(responseJson => {
-          if (responseJson.status == "OK") {
-            var markers = [];
-
+          responseJson.results.map(candidate => {
+            cont++;
             markers.push(
               <MapView.Marker
-                key={query}
+                key={cont}
                 coordinate={{
-                  latitude: responseJson.result.geometry.location.lat,
-                  longitude: responseJson.result.geometry.location.lng,
+                  latitude: candidate.geometry.location.lat,
+                  longitude: candidate.geometry.location.lng,
                 }}
-                title={responseJson.result.name}
-                description={responseJson.result.formatted_address}
+                title={candidate.name}
+                description={candidate.formatted_address}
                 pincolor="red"
                 onPress={async () => {
                   await this.setState({
                     destination: {
-                      name: responseJson.result.name,
-                      lat: responseJson.result.geometry.location.lat,
-                      lng: responseJson.result.geometry.location.lng,
+                      name: candidate.name,
+                      lat: candidate.geometry.location.lat,
+                      lng: candidate.geometry.location.lng,
                     },
-                    buying: true,
+                    flowStatus: FLOW_STATUS_QUOTING,
                   });
-
                   await this.getPoly();
                 }}
               />
             );
 
-            //console.log(responseJson.result.geometry);
-            let coords = {
-              latitude: responseJson.result.geometry.location.lat,
-              longitude: responseJson.result.geometry.location.lng,
-              // latitudeDelta: responseJson.result.geometry.viewport.southwest.lat,
-              // longitudeDelta: responseJson.result.geometry.viewport.southwest.lng
-              latitudeDelta: 0.02,
-              longitudeDelta: 0.02,
-            };
-
-            this.map.animateToRegion(coords, 500);
-
-            this.setState({
-              lugarActual: responseJson.result,
-              markers,
-              active: false,
-              destination: {
-                name: responseJson.result.name,
-                address: responseJson.result.formatted_address,
-                lat: responseJson.result.geometry.location.lat,
-                lng: responseJson.result.geometry.location.lng,
+            lugares.push({
+              id: candidate.place_id,
+              nombre: candidate.name,
+              direccion: candidate.formatted_address,
+              coordenadas: {
+                lat: candidate.geometry.location.lat,
+                lng: candidate.geometry.location.lng,
               },
-              buying: true,
-              flowStatus: FLOW_STATUS_NONE,
             });
-            //this._map.animateToCoordinate({ latitude: responseJson.result.geometry.location.lat, longitude: responseJson.result.geometry.location.lng}, 1);
-          } else {
-            console.log("Status failed");
-          }
-        })
-        .catch(error => {
-          console.error(error);
-        });
-    };
+          });
 
-    this.registerPush = this.registerPush.bind(this);
-    this.handleQuote = this.handleQuote.bind(this);
-    this.handleConfirm = this.handleConfirm.bind(this);
-  }
+          this.setState({ markers, lugares, polyline: [] });
+        } else {
+          console.log("Status failed");
+        }
+      })
+      .catch(error => {
+        console.error(error);
+      });
+  };
+
+  autocompleteSearch(query) {
+    this.setState({
+      polyline: [],
+      active: true,
+      busqueda: query,
+      lugares: [],
+      flowStatus: FLOW_STATUS_NONE,
+    });
+
+    fetch(
+      "https://maps.googleapis.com/maps/api/place/autocomplete/json?key=" +
+      API_KEY +
+      "&input=" +
+      query +
+      "&components=country:hn&location=14.0723,-87.1921&radius=30000"
+    )
+      .then(response => response.json())
+      .then(responseJson => {
+        if (responseJson.status == "OK") {
+          this.setState({ lugaresAuto: responseJson.predictions });
+        } else {
+          console.log("Status failed");
+        }
+      })
+      .catch(error => {
+        console.error(error);
+      });
+  };
+
+  placeDetails(query) {
+    this.wait();
+
+    fetch(
+      "https://maps.googleapis.com/maps/api/place/details/json?key=" +
+      API_KEY +
+      "&placeid=" +
+      query
+    )
+      .then(response => response.json())
+      .then(responseJson => {
+        if (responseJson.status == "OK") {
+          var markers = [];
+
+          markers.push(
+            <MapView.Marker
+              key={query}
+              coordinate={{
+                latitude: responseJson.result.geometry.location.lat,
+                longitude: responseJson.result.geometry.location.lng,
+              }}
+              title={responseJson.result.name}
+              description={responseJson.result.formatted_address}
+              pincolor="red"
+              onPress={async () => {
+                await this.setState({
+                  destination: {
+                    name: responseJson.result.name,
+                    lat: responseJson.result.geometry.location.lat,
+                    lng: responseJson.result.geometry.location.lng,
+                  },
+                  flowStatus: FLOW_STATUS_QUOTING,
+                });
+
+                await this.getPoly();
+              }}
+            />
+          );
+
+          //console.log(responseJson.result.geometry);
+          let coords = {
+            latitude: responseJson.result.geometry.location.lat,
+            longitude: responseJson.result.geometry.location.lng,
+            // latitudeDelta: responseJson.result.geometry.viewport.southwest.lat,
+            // longitudeDelta: responseJson.result.geometry.viewport.southwest.lng
+            latitudeDelta: 0.02,
+            longitudeDelta: 0.02,
+          };
+
+          this.map.animateToRegion(coords, 500);
+
+          this.setState({
+            lugarActual: responseJson.result,
+            markers,
+            active: false,
+            destination: {
+              name: responseJson.result.name,
+              address: responseJson.result.formatted_address,
+              lat: responseJson.result.geometry.location.lat,
+              lng: responseJson.result.geometry.location.lng,
+              placeId: query
+            },
+            flowStatus: FLOW_STATUS_QUOTING,
+          });
+          //this._map.animateToCoordinate({ latitude: responseJson.result.geometry.location.lat, longitude: responseJson.result.geometry.location.lng}, 1);
+        } else {
+          console.log("Status failed");
+        }
+      })
+      .catch(error => {
+        console.error(error);
+      });
+  };
 
   registerPush() {
     registerForPushNotificationsAsync()
@@ -384,15 +392,15 @@ export default class Home extends React.Component {
   async getPoly() {
     await fetch(
       "https://maps.googleapis.com/maps/api/directions/json?key=" +
-        API_KEY +
-        "&origin=" +
-        this.state.origin.lat +
-        "," +
-        this.state.origin.lng +
-        "&destination=" +
-        this.state.destination.lat +
-        "," +
-        this.state.destination.lng
+      API_KEY +
+      "&origin=" +
+      this.state.origin.lat +
+      "," +
+      this.state.origin.lng +
+      "&destination=" +
+      this.state.destination.lat +
+      "," +
+      this.state.destination.lng
     )
       .then(response => response.json())
       .then(responseJson => {
@@ -429,14 +437,14 @@ export default class Home extends React.Component {
   }
 
   deactivate() {
-    this.setState({ active: false, buying: false });
+    this.setState({ active: false, flowStatus: FLOW_STATUS_NONE });
     Keyboard.dismiss();
   }
 
   activate() {
     this.setState({
       active: true,
-      buying: false,
+      flowStatus: FLOW_STATUS_NONE,
     });
   }
 
@@ -449,7 +457,7 @@ export default class Home extends React.Component {
       this.setState({ flowStatus: FLOW_STATUS_ERROR });
     };
 
-    this.setState({ flowStatus: FLOW_STATUS_WAITING });
+    this.wait();
 
     await this._getLocationAsync();
 
@@ -477,7 +485,8 @@ export default class Home extends React.Component {
     db.ref().update(updates, error => (error ? quoteError() : quoteSuccess()));
   }
 
-  handleConfirm(){
+  handleConfirm() {
+    this.wait();
     this.setState({ flowStatus: FLOW_STATUS_CONFIRMED });
   }
 
@@ -487,7 +496,7 @@ export default class Home extends React.Component {
         style={styles.manual}
         onPress={() => {
           this.setState({
-            buying: true,
+            flowStatus: FLOW_STATUS_QUOTING,
             active: false,
             markers: [],
             polyline: [],
@@ -507,6 +516,14 @@ export default class Home extends React.Component {
 
     if (this.state.flowStatus != FLOW_STATUS_NONE) {
       switch (this.state.flowStatus) {
+        case FLOW_STATUS_QUOTING: 
+          return (
+            <Cotizar
+              destination={this.state.destination.name}
+              onConfirm={this.handleQuote}
+              onCancel={() => this.setState({ flowStatus: FLOW_STATUS_NONE, markers: [] })}
+            />
+          );
         case FLOW_STATUS_WAITING:
           return (
             <View className="fullCenter">
@@ -515,152 +532,30 @@ export default class Home extends React.Component {
           );
         case FLOW_STATUS_SUCCESS:
           return (
-            <View style={styles.messageView}>
-              <View flex={2}>
-                <Icon name="check-circle" size={70} color="#4CAF50" />
-              </View>
-              <Text flex={1}>Cotizando taxi a</Text>
-              <Text style={styles.displayTitle} flex={1}>
-                {this.state.destination.name}
-              </Text>
-              <Text style={styles.disclaimer} flex={1}>
-                Recibirás en breve una notificación con el precio.
-              </Text>
-            </View>
+            <CotizarExito destination={this.state.destination.name}/>
           );
         case FLOW_STATUS_CONFIRMING:
           return (
-            <View style={styles.messageView}>
-              <View flex={2}>
-                <Icon name="local-taxi" size={70} color="#FF9800" />
-              </View>
-              <Text flex={1}>Precio a {this.state.destination.name}</Text>
-              <Text style={styles.displayTitle} flex={1}>
-                L. {this.state.quote.precio}
-              </Text>
-              <View style={styles.buttonRow} flex={1}>
-                <Button
-                  style={styles.buyButton}
-                  title="Cancelar"
-                  color="#f44336"
-                  onPress={() => this.setState({ buying: false })}
-                />
-                <Button
-                  style={styles.buyButton}
-                  title="Pedir Taxi"
-                  color="#4CAF50"
-                  onPress={this.handleConfirm}
-                />
-              </View>
-            </View>
+            <CotizarConfirmar
+              onConfirm={this.handleConfirm}
+              onCancel={() => this.setState({ flowStatus: FLOW_STATUS_NONE })}
+              price={this.state.quote.precio}
+              destination={this.state.destination.name}
+            />
           );
         case FLOW_STATUS_ERROR:
           return (
-            <View style={styles.messageView}>
-              <View flex={2}>
-                <Icon name="error" size={70} color="#f44336" />
-              </View>
-              <Text style={styles.displayTitle} flex={1}>
-                Ocurrió un Error
-              </Text>
-              <Button
-                title="Regresar"
-                onPress={() => this.setState({ buying: false, flowStatus: FLOW_STATUS_NONE })}
-              />
-            </View>
+            <CotizarError onConfirm={() => this.setState({ flowStatus: FLOW_STATUS_NONE })}/>
           );
         case FLOW_STATUS_CONFIRMED:
           return (
-            <View style={styles.messageView}>
-              <View flex={2}>
-                <Icon name="check-circle" size={70} color="#4CAF50" />
-              </View>
-              <Text flex={1}>¡Éxito!</Text>
-              <Text style={styles.displayTitle} flex={1}>
-                Tu Génesis ya va en camino.
-              </Text>
-              <Text style={styles.disclaimer} flex={1}>
-                ¡Gracias por tu preferencia!
-              </Text>
-            </View>
+            <CotizarAceptar/>
           );
         default:
           break;
       }
-    } else if (this.state.buying) {
-      return (
-        <View style={styles.buyView}>
-          <View flex={4} style={styles.buyConfirm}>
-            <Text style={styles.displayTitle}>Confirmar destino</Text>
-            <View style={styles.routeView}>
-              <Text style={styles.routeText}>{"Mi ubicación"}</Text>
-              <Icon
-                style={styles.searchBackIcon}
-                name="arrow-downward"
-                type="material"
-                color="gray"
-                size={20}
-              />
-              <Text style={styles.routeText}>{this.state.destination.name}</Text>
-            </View>
-          </View>
-          <Text style={styles.disclaimer}>No se te cobrará nada hasta que aceptes el precio.</Text>
-          <View style={styles.fineprintView}>
-            <Text style={styles.fineprintText}>
-              Al presionar "Pedir Precio" aceptas nuestros Términos de Servicio.
-            </Text>
-          </View>
-          <View style={styles.buttonRow}>
-            <Button
-              style={styles.buyButton}
-              title="Cancelar"
-              color="#f44336"
-              onPress={() => this.setState({ buying: false })}
-            />
-            <Button
-              style={styles.buyButton}
-              title="Pedir Precio"
-              color="#4CAF50"
-              onPress={this.handleQuote}
-            />
-          </View>
-        </View>
-      );
     } else if (this.state.busqueda == "") {
-      return (
-        <View style={styles.welcomeView}>
-          <View style={styles.welcomeTextView}>
-            <Text style={styles.welcomeText}>¿A dónde vamos hoy?</Text>
-          </View>
-          <View style={styles.lugaresFrecuentes}>
-            <View style={styles.frecuenteView}>
-            <Ripple>
-              <Icon name="home" size={50} color="#FFB300" />
-              <Text style={styles.frecuenteText}>Casa</Text>
-            </Ripple>
-            </View>
-            <View style={styles.frecuenteView}>
-            <Ripple>
-              <Icon name="work" size={50} color="#FFB300" />
-              <Text style={styles.frecuenteText}>Trabajo</Text>
-            </Ripple>
-            </View>
-            <View style={styles.frecuenteView}>
-            <Ripple>
-              <Icon name="book" size={50} color="#FFB300" />
-              <Text style={styles.frecuenteText}>Colegio</Text>
-            </Ripple>
-            </View>
-          </View>
-          <View style={styles.nuevoFrecuenteView}>
-            <Button
-              title="Añadir nuevo lugar frecuente"
-              //style={styles.nuevoFrecuenteButton}
-              onPress={() => console.log("nuevo frecuente pressed")}
-            />
-          </View>
-        </View>
-      );
+      return this.state.active ? <Recientes /> : <Bienvenida />;
     } else {
       if (this.state.lugares.length > 0) {
         let lugares = [];
@@ -672,7 +567,7 @@ export default class Home extends React.Component {
               onPress={() => {
                 this.setState({
                   polyline: [],
-                  buying: true,
+                  flowStatus: FLOW_STATUS_QUOTING,
                   active: false,
                   destination: { name: suge.nombre },
                 });
@@ -758,7 +653,7 @@ export default class Home extends React.Component {
               lat: location.nativeEvent.coordinate.latitude,
               lng: location.nativeEvent.coordinate.longitude,
             },
-            buying: true,
+            flowStatus: FLOW_STATUS_QUOTING,
           });
           await this.getPoly();
         }}
@@ -766,6 +661,10 @@ export default class Home extends React.Component {
     );
 
     this.setState({ markers });
+  }
+
+  handlePoiClick(location) {
+    this.placeDetails(location.nativeEvent.placeId);
   }
 
   drawPolyline() {
@@ -802,6 +701,7 @@ export default class Home extends React.Component {
           <View style={{ flex: 1 }}>
             <MapView
               onLongPress={this.handleLongPress.bind(this)}
+              onPoiClick={this.handlePoiClick.bind(this)}
               showsUserLocation={true}
               followsUserLocation={true}
               ref={component => (this.map = component)}
@@ -809,9 +709,9 @@ export default class Home extends React.Component {
               showsCompass={false}
               initialRegion={INITIAL_REGION}
               mapPadding={{
-                top: Dimensions.get("window").height * 0.15,
+                top: Dimensions.get("window").height * 0.11,
                 right: 0,
-                bottom: Dimensions.get("window").height * 0.35,
+                bottom: Dimensions.get("window").height * 0.33,
                 left: 0,
               }}>
               {this.state.markers.map(marker => marker)}
@@ -829,7 +729,7 @@ export default class Home extends React.Component {
               }
               elevation={this.state.active ? 2 : 0}>
               <View elevation={3} style={styles.searchBar}>
-                {this.state.active ? (
+                {this.state.active || this.state.flowStatus != FLOW_STATUS_NONE ? (
                   <Icon
                     style={styles.searchBackIcon}
                     name="arrow-back"
@@ -839,18 +739,18 @@ export default class Home extends React.Component {
                     onPress={this.deactivate.bind(this)}
                   />
                 ) : (
-                  <Icon
-                    style={styles.searchBackIcon}
-                    name="menu"
-                    type="material"
-                    color="#212121"
-                    size={20}
-                    onPress={() => {
-                      this.props.navigation.openDrawer();
-                      console.log("Menu pressed");
-                    }}
-                  />
-                )}
+                    <Icon
+                      style={styles.searchBackIcon}
+                      name="menu"
+                      type="material"
+                      color="#212121"
+                      size={20}
+                      onPress={() => {
+                        this.props.navigation.openDrawer();
+                        console.log("Menu pressed");
+                      }}
+                    />
+                  )}
                 <TextInput
                   editable={this.state.flowStatus === FLOW_STATUS_NONE}
                   style={styles.searchInput}
