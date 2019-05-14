@@ -1,5 +1,13 @@
 import React, { Component } from "react";
-import { StyleSheet, Dimensions, Alert } from "react-native";
+import {
+  StyleSheet,
+  Dimensions,
+  KeyboardAvoidingView,
+  View,
+  TouchableOpacity,
+  Text,
+} from "react-native";
+import { Input, Button, Icon } from "react-native-elements";
 import firebase from "firebase";
 
 class LogIn extends Component {
@@ -20,7 +28,7 @@ class LogIn extends Component {
   };
   render() {
     return (
-      <View style={styles.SignUpView}>
+      <KeyboardAvoidingView behavior={"padding"} style={styles.SignUpView}>
         <View style={styles.credentialsView}>
           <Input
             placeholder="Usuario"
@@ -45,7 +53,14 @@ class LogIn extends Component {
         <View style={styles.buttonRow}>
           <Button title="Iniciar Sesión" onPress={this.handleSignIn} />
         </View>
-      </View>
+        <TouchableOpacity
+          onPress={() => {
+            this.props.navigation.navigate("SignUp");
+          }}
+          style={{ marginTop: 5 }}>
+          <Text style={{ color: "white", textDecorationLine: "underline" }}>Registrarse</Text>
+        </TouchableOpacity>
+      </KeyboardAvoidingView>
     );
   }
 }

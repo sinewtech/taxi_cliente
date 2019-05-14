@@ -1,38 +1,53 @@
 import React, { Component } from "react";
-import { StyleSheet, Dimensions, Alert } from "react-native";
+import { StyleSheet, Dimensions, Alert, View } from "react-native";
+import { Input, Button, Icon } from "react-native-elements";
 import firebase from "firebase";
 class SignUp extends Component {
   constructor() {
     super();
     this.state = {
-      username: "",
+      email: "",
       password: "",
+      nombre: "",
     };
   }
-  handleRegister() {
-    let callback = () => this.handleSignIn();
+  handleRegister = () => {
     firebase
       .auth()
-      .createUserWithEmailAndPassword(this.state.username, this.state.password)
-      .then(callback)
+      .createUserWithEmailAndPassword(this.state.email, this.state.password)
+      .then(async data => {
+        await firebase
+          .firestore()
+          .collection("clients")
+          .doc(data.user.uid)
+          .set({ email: this.state.email, name: this.state.nombre });
+      })
       .catch(error => {
         console.error(error);
         Alert.alert(error);
       });
-  }
+  };
   render() {
     return (
       <View style={styles.SignUpView}>
         <View style={styles.credentialsView}>
           <Input
-            placeholder="Usuario"
-            leftIcon={<Icon name="person" size={24} color="black" style={styles.Icon} />}
+            placeholder="Email"
+            leftIcon={<Icon name="mail" size={24} color="black" style={styles.Icon} />}
             inputContainerStyle={styles.Input}
             leftIconContainerStyle={{ marginRight: 15 }}
             autoCapitalize="none"
             autoComplete="email"
             keyboardType="email-address"
-            onChangeText={text => this.setState({ username: text })}
+            onChangeText={text => this.setState({ email: text })}
+          />
+          <Input
+            placeholder="Nombre"
+            leftIcon={<Icon name="person" size={24} color="black" style={styles.Icon} />}
+            inputContainerStyle={styles.Input}
+            leftIconContainerStyle={{ marginRight: 15 }}
+            autoCapitalize="none"
+            onChangeText={text => this.setState({ nombre: text })}
           />
           <Input
             placeholder="Contraseña"

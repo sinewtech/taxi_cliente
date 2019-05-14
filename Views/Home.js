@@ -18,8 +18,7 @@ import {
 import { MapView, Constants, Location, Permissions, Notifications } from "expo";
 import { Button, Icon } from "react-native-elements";
 import Ripple from "react-native-material-ripple";
-
-import { SignIn, Waiting } from "../Components/Auth.js";
+import Waiting from "../Components/Waiting";
 import Bienvenida from "../Components/Bienvenida.js";
 import Recientes from "../Components/Recientes.js";
 import Cotizar, {
@@ -144,21 +143,13 @@ export default class Home extends React.Component {
         save(null);
       }
     });
-
-    this.registerPush = this.registerPush.bind(this);
-    this.handleQuote = this.handleQuote.bind(this);
-    this.handleConfirm = this.handleConfirm.bind(this);
-    this.searchPlaces = this.searchPlaces.bind(this);
-    this.placeDetails = this.placeDetails.bind(this);
-    this.autocompleteSearch = this.autocompleteSearch.bind(this);
-    this.wait = this.wait.bind(this);
   }
 
-  wait() {
+  wait = () => {
     this.setState({ flowStatus: FLOW_STATUS_WAITING });
-  }
+  };
 
-  searchPlaces(query) {
+  searchPlaces = query => {
     this.deactivate();
     //Llamar al api
     fetch(
@@ -221,9 +212,9 @@ export default class Home extends React.Component {
       .catch(error => {
         console.error(error);
       });
-  }
+  };
 
-  autocompleteSearch(query) {
+  autocompleteSearch = query => {
     this.setState({
       polyline: [],
       active: true,
@@ -250,9 +241,9 @@ export default class Home extends React.Component {
       .catch(error => {
         console.error(error);
       });
-  }
+  };
 
-  placeDetails(query) {
+  placeDetails = query => {
     this.wait();
 
     fetch(
@@ -321,9 +312,9 @@ export default class Home extends React.Component {
       .catch(error => {
         console.error(error);
       });
-  }
+  };
 
-  registerPush() {
+  registerPush = () => {
     registerForPushNotificationsAsync()
       .then(pushToken => {
         console.log(pushToken);
@@ -363,17 +354,25 @@ export default class Home extends React.Component {
       })
       .catch(e => console.error(e));
 
-    this._notificationSubscription = Notifications.addListener(this._handleNotification.bind(this));
+    this._notificationSubscription = Notifications.addListener(this._handleNotification);
 
     this.backHandler = BackHandler.addEventListener("hardwareBackPress", () => {
       this.deactivate(); // works best when the goBack is async
       return true;
     });
+  };
+  _getLocationAsync = async () => {
+    let { status } = await Permissions.askAsync(Permissions.LOCATION);
+    if (status !== "granted") {
+      this.setState({
+        errorMessage: "Permission to access location was denied",
+      });
+    }
 
-    this._getLocationAsync = this._getLocationAsync.bind(this);
-  }
-
-  _handleNotification(notification) {
+    let location = await Location.getCurrentPositionAsync({});
+    this.setState({ location });
+  };
+  _handleNotification = notification => {
     console.log("Quote recibida: ", notification);
     this.setState({
       quote: {
@@ -382,7 +381,7 @@ export default class Home extends React.Component {
       },
       flowStatus: FLOW_STATUS_CONFIRMING,
     });
-  }
+  };
 
   async getPoly() {
     await fetch(
@@ -430,7 +429,7 @@ export default class Home extends React.Component {
     });
   }
 
-  async handleQuote() {
+  handleQuote = async () => {
     let quoteSuccess = () => {
       this.setState({ flowStatus: FLOW_STATUS_SUCCESS });
     };
@@ -452,13 +451,6 @@ export default class Home extends React.Component {
       destination: this.state.destination,
       status: QUOTE_STATUS_PENDING,
     };
-    // let data = {
-    //   userUID: this.state.userUID,
-    //   origin: this.state.origin,
-    //   destination: this.state.destination,
-    //   status: QUOTE_STATUS_PENDING,
-    // };
-
     console.log("Enviando orden", data);
 
     var key = firebase
@@ -473,12 +465,12 @@ export default class Home extends React.Component {
       .database()
       .ref()
       .update(updates, error => (error ? quoteError() : quoteSuccess()));
-  }
+  };
 
-  handleConfirm() {
+  handleConfirm = () => {
     this.wait();
     this.setState({ flowStatus: FLOW_STATUS_CONFIRMED });
-  }
+  };
 
   resultViewContent() {
     const manualHeader = (
