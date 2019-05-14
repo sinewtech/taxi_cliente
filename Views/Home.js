@@ -22,7 +22,12 @@ import Ripple from "react-native-material-ripple";
 import { SignIn, Waiting } from "../Components/Auth.js";
 import Bienvenida from "../Components/Bienvenida.js";
 import Recientes from "../Components/Recientes.js";
-import Cotizar, { CotizarExito, CotizarConfirmar, CotizarError, CotizarAceptar } from "../Components/Cotizar.js";
+import Cotizar, {
+  CotizarExito,
+  CotizarConfirmar,
+  CotizarError,
+  CotizarAceptar,
+} from "../Components/Cotizar.js";
 
 let masterStyles = require("../styles.js");
 let styles = masterStyles.styles;
@@ -158,10 +163,10 @@ export default class Home extends React.Component {
     //Llamar al api
     fetch(
       "https://maps.googleapis.com/maps/api/place/textsearch/json?key=" +
-      API_KEY +
-      "&query=" +
-      query +
-      "&location=14.0723,-87.1921&radius=30000"
+        API_KEY +
+        "&query=" +
+        query +
+        "&location=14.0723,-87.1921&radius=30000"
     )
       .then(response => response.json())
       .then(responseJson => {
@@ -216,7 +221,7 @@ export default class Home extends React.Component {
       .catch(error => {
         console.error(error);
       });
-  };
+  }
 
   autocompleteSearch(query) {
     this.setState({
@@ -229,10 +234,10 @@ export default class Home extends React.Component {
 
     fetch(
       "https://maps.googleapis.com/maps/api/place/autocomplete/json?key=" +
-      API_KEY +
-      "&input=" +
-      query +
-      "&components=country:hn&location=14.0723,-87.1921&radius=30000"
+        API_KEY +
+        "&input=" +
+        query +
+        "&components=country:hn&location=14.0723,-87.1921&radius=30000"
     )
       .then(response => response.json())
       .then(responseJson => {
@@ -245,16 +250,13 @@ export default class Home extends React.Component {
       .catch(error => {
         console.error(error);
       });
-  };
+  }
 
   placeDetails(query) {
     this.wait();
 
     fetch(
-      "https://maps.googleapis.com/maps/api/place/details/json?key=" +
-      API_KEY +
-      "&placeid=" +
-      query
+      "https://maps.googleapis.com/maps/api/place/details/json?key=" + API_KEY + "&placeid=" + query
     )
       .then(response => response.json())
       .then(responseJson => {
@@ -307,7 +309,7 @@ export default class Home extends React.Component {
               address: responseJson.result.formatted_address,
               lat: responseJson.result.geometry.location.lat,
               lng: responseJson.result.geometry.location.lng,
-              placeId: query
+              placeId: query,
             },
             flowStatus: FLOW_STATUS_QUOTING,
           });
@@ -319,7 +321,7 @@ export default class Home extends React.Component {
       .catch(error => {
         console.error(error);
       });
-  };
+  }
 
   registerPush() {
     registerForPushNotificationsAsync()
@@ -332,7 +334,8 @@ export default class Home extends React.Component {
             .get()
             .then(DocumentSnapshot => {
               let pushTokens = [];
-              if (DocumentSnapshot.exists) {
+              if (DocumentSnapshot.data()["pushDevices"]) {
+                console.log("existe");
                 let deviceJson = DocumentSnapshot.data()["pushDevices"];
                 for (var token in deviceJson) {
                   if (deviceJson[token] === pushToken) {
@@ -347,9 +350,7 @@ export default class Home extends React.Component {
               }
               db.collection("clients")
                 .doc(this.state.userUID)
-                .set({
-                  email: this.state.user.email,
-                  username: "test",
+                .update({
                   pushDevices: pushTokens,
                 });
             })
@@ -386,15 +387,15 @@ export default class Home extends React.Component {
   async getPoly() {
     await fetch(
       "https://maps.googleapis.com/maps/api/directions/json?key=" +
-      API_KEY +
-      "&origin=" +
-      this.state.origin.lat +
-      "," +
-      this.state.origin.lng +
-      "&destination=" +
-      this.state.destination.lat +
-      "," +
-      this.state.destination.lng
+        API_KEY +
+        "&origin=" +
+        this.state.origin.lat +
+        "," +
+        this.state.origin.lng +
+        "&destination=" +
+        this.state.destination.lat +
+        "," +
+        this.state.destination.lng
     )
       .then(response => response.json())
       .then(responseJson => {
@@ -505,7 +506,7 @@ export default class Home extends React.Component {
 
     if (this.state.flowStatus != FLOW_STATUS_NONE) {
       switch (this.state.flowStatus) {
-        case FLOW_STATUS_QUOTING: 
+        case FLOW_STATUS_QUOTING:
           return (
             <Cotizar
               destination={this.state.destination.name}
@@ -520,9 +521,7 @@ export default class Home extends React.Component {
             </View>
           );
         case FLOW_STATUS_SUCCESS:
-          return (
-            <CotizarExito destination={this.state.destination.name}/>
-          );
+          return <CotizarExito destination={this.state.destination.name} />;
         case FLOW_STATUS_CONFIRMING:
           return (
             <CotizarConfirmar
@@ -533,13 +532,9 @@ export default class Home extends React.Component {
             />
           );
         case FLOW_STATUS_ERROR:
-          return (
-            <CotizarError onConfirm={() => this.setState({ flowStatus: FLOW_STATUS_NONE })}/>
-          );
+          return <CotizarError onConfirm={() => this.setState({ flowStatus: FLOW_STATUS_NONE })} />;
         case FLOW_STATUS_CONFIRMED:
-          return (
-            <CotizarAceptar/>
-          );
+          return <CotizarAceptar />;
         default:
           break;
       }
@@ -728,18 +723,18 @@ export default class Home extends React.Component {
                     onPress={this.deactivate.bind(this)}
                   />
                 ) : (
-                    <Icon
-                      style={styles.searchBackIcon}
-                      name="menu"
-                      type="material"
-                      color="#212121"
-                      size={20}
-                      onPress={() => {
-                        this.props.navigation.openDrawer();
-                        console.log("Menu pressed");
-                      }}
-                    />
-                  )}
+                  <Icon
+                    style={styles.searchBackIcon}
+                    name="menu"
+                    type="material"
+                    color="#212121"
+                    size={20}
+                    onPress={() => {
+                      this.props.navigation.openDrawer();
+                      console.log("Menu pressed");
+                    }}
+                  />
+                )}
                 <TextInput
                   editable={this.state.flowStatus === FLOW_STATUS_NONE}
                   style={styles.searchInput}
