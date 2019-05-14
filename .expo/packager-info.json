@@ -1,9 +1,10 @@
 {
-  "expoServerNgrokUrl": "https://h5-h2x.dmendoza99.taxi-cliente.exp.direct",
-  "packagerNgrokUrl": "https://packager.h5-h2x.dmendoza99.taxi-cliente.exp.direct",
-  "ngrokPid": 15016,
-  "packagerPort": 19001,
-  "packagerPid": 11388,
-  "expoServerPort": 19000,
-  "devToolsPort": 19002
+  "expoServerNgrokUrl": null,
+  "packagerNgrokUrl": null,
+  "ngrokPid": null,
+  "packagerPort": null,
+  "packagerPid": null,
+  "expoServerPort": null,
+  "devToolsPort": 19002,
+  "webpackServerPort": null
 }
