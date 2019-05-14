@@ -1,6 +1,6 @@
 import React from "react";
 import firebase from "@firebase/app";
-import "@firebase/database";
+import "@firebase/firestore";
 
 import {
   Alert,
@@ -10,7 +10,6 @@ import {
   View,
   Animated,
   ScrollView,
-  TouchableHighlight,
   Keyboard,
   BackHandler,
   ActivityIndicator,
@@ -49,7 +48,6 @@ const INITIAL_REGION = {
   latitudeDelta: 0.1,
   longitudeDelta: 0.1,
 };
-
 firebase.initializeApp({
   apiKey: "AIzaSyBkCxRqmYLXkznasnf-MRTROWVJcORIGcw",
   authDomain: "taxiapp-sinewave.firebaseapp.com",
@@ -58,8 +56,7 @@ firebase.initializeApp({
   storageBucket: "taxiapp-sinewave.appspot.com",
   messagingSenderId: "503391985374",
 });
-
-const db = firebase.database();
+const db = firebase.firestore();
 
 async function registerForPushNotificationsAsync() {
   const { status: existingStatus } = await Permissions.getAsync(Permissions.NOTIFICATIONS);
@@ -90,7 +87,6 @@ const decodePolyline = require("decode-google-map-polyline");
 export default class Home extends React.Component {
   constructor(props) {
     super(props);
-
     this.state = {
       searchResults: {},
       markers: [],
@@ -137,7 +133,6 @@ export default class Home extends React.Component {
         var isAnonymous = user.isAnonymous;
         var uid = user.uid;
         var providerData = user.providerData;*/
-
         save(user);
         register();
       } else {
@@ -329,38 +324,37 @@ export default class Home extends React.Component {
   registerPush() {
     registerForPushNotificationsAsync()
       .then(pushToken => {
+        console.log(pushToken);
         if (pushToken) {
-          db.ref("users/clients/" + this.state.userUID + "/pushDevices")
-            .once("value")
-            .then(devices => {
+          console.log("entre :V");
+          db.collection("clients")
+            .doc(this.state.userUID)
+            .get()
+            .then(DocumentSnapshot => {
               let pushTokens = [];
-              let deviceJson = devices.toJSON();
-
-              for (var token in deviceJson) {
-                //console.log("token ", token)
-
-                if (deviceJson[token] === pushToken) {
-                  console.log("Pushtoken ya existe para usuario.");
-                  return;
-                } else {
-                  pushTokens.push(deviceJson[token]);
+              if (DocumentSnapshot.exists) {
+                let deviceJson = DocumentSnapshot.data()["pushDevices"];
+                for (var token in deviceJson) {
+                  if (deviceJson[token] === pushToken) {
+                    console.log("Pushtoken ya existe para usuario.");
+                    return;
+                  } else {
+                    pushTokens.push(deviceJson[token]);
+                  }
                 }
+              } else {
+                pushTokens.push(pushToken);
               }
-
-              console.log(
-                "Empujando Push Token nuevo: ",
-                pushToken,
-                " para usuario ",
-                this.state.userUID,
-                this.state.user
-              );
-              pushTokens.push(pushToken);
-
-              db.ref("users/clients/" + this.state.userUID).set({
-                username: "test",
-                email: "test",
-                pushDevices: pushTokens,
-              });
+              db.collection("clients")
+                .doc(this.state.userUID)
+                .set({
+                  email: this.state.user.email,
+                  username: "test",
+                  pushDevices: pushTokens,
+                });
+            })
+            .catch(e => {
+              console.log(e);
             });
         } else {
           console.error("Pushtoken nulo");
@@ -415,19 +409,6 @@ export default class Home extends React.Component {
         }
       });
   }
-
-  _getLocationAsync = async () => {
-    let { status } = await Permissions.askAsync(Permissions.LOCATION);
-    if (status !== 'granted') {
-      this.setState({
-        locationError: 'Permission to access location was denied',
-      });
-    }
-
-    let location = await Location.getCurrentPositionAsync({});
-    this.setState({ location });
-  };
-
   componentWillUnmount() {
     clearInterval(this.locationInterval);
   }
@@ -458,7 +439,6 @@ export default class Home extends React.Component {
     };
 
     this.wait();
-
     await this._getLocationAsync();
 
     let data = {
@@ -471,6 +451,12 @@ export default class Home extends React.Component {
       destination: this.state.destination,
       status: QUOTE_STATUS_PENDING,
     };
+    // let data = {
+    //   userUID: this.state.userUID,
+    //   origin: this.state.origin,
+    //   destination: this.state.destination,
+    //   status: QUOTE_STATUS_PENDING,
+    // };
 
     console.log("Enviando orden", data);
 
@@ -482,7 +468,10 @@ export default class Home extends React.Component {
     var updates = {};
     updates["/quotes/" + key] = data;
 
-    db.ref().update(updates, error => (error ? quoteError() : quoteSuccess()));
+    firebase
+      .database()
+      .ref()
+      .update(updates, error => (error ? quoteError() : quoteSuccess()));
   }
 
   handleConfirm() {
@@ -788,8 +777,6 @@ export default class Home extends React.Component {
           </View>
         );
       }
-    } else {
-      return <SignIn />;
     }
   }
 }
