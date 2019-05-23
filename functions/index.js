@@ -24,7 +24,7 @@ location.post("/", (req, res) => {
   admin
     .database()
     .ref()
-    .child("/users/drivers/" + req.body.user + "/position/")
+    .child("/locations/" + req.body.user + "/position/")
     .set(data);
   res.end("fin");
 });
