@@ -372,6 +372,7 @@ export default class Home extends React.Component {
     let location = await Location.getCurrentPositionAsync({});
     this.setState({ location });
   };
+  
   _handleNotification = notification => {
     if (notification.data.id == 1) {
       console.log("Quote recibida: ", notification);
