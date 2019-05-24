@@ -373,14 +373,16 @@ export default class Home extends React.Component {
     this.setState({ location });
   };
   _handleNotification = notification => {
-    console.log("Quote recibida: ", notification);
-    this.setState({
-      quote: {
-        mensaje: notification.data.mensaje,
-        precio: notification.data.precio,
-      },
-      flowStatus: FLOW_STATUS_CONFIRMING,
-    });
+    if (notification.data.id == 1) {
+      console.log("Quote recibida: ", notification);
+      this.setState({
+        quote: {
+          mensaje: notification.data.mensaje,
+          precio: notification.data.precio,
+        },
+        flowStatus: FLOW_STATUS_CONFIRMING,
+      });
+    }
   };
 
   async getPoly() {
