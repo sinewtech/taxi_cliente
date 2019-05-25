@@ -6,6 +6,7 @@ import {
   View,
   TouchableOpacity,
   Text,
+  Alert,
 } from "react-native";
 import { Input, Button, Icon } from "react-native-elements";
 import firebase from "firebase";
@@ -14,17 +15,37 @@ class LogIn extends Component {
   constructor() {
     super();
     this.state = {
-      username: "",
+      mail: "",
       password: "",
     };
   }
   handleSignIn = () => {
-    firebase
-      .auth()
-      .signInWithEmailAndPassword(this.state.username, this.state.password)
-      .catch(error => {
-        console.error(error);
-      });
+    let CanContinue = true;
+    for (key in this.state) {
+      if (this.state[key].length === 0) {
+        CanContinue = false;
+        break;
+      }
+    }
+    if (!CanContinue) {
+      Alert.alert("Error", "Por favor Ingrese sus datos");
+      return;
+    } else {
+      if (!/^((?!\.)[\w-_.]*[^.])(@\w+)(\.\w+(\.\w+)?[^.\W])$/.test(this.state.mail)) {
+        Alert.alert("Correo", "Por favor use un formato de correo valido");
+        return;
+      }
+      if (!/^[A-Za-z0-9]{6,}$/.test(this.state.password)) {
+        Alert.alert("Contraseña", "Recuerde que la contraseña debe ser mayor a 6 caracteres.");
+        return;
+      }
+      firebase
+        .auth()
+        .signInWithEmailAndPassword(this.state.mail, this.state.password)
+        .catch(error => {
+          console.error(error);
+        });
+    }
   };
   render() {
     return (
@@ -38,7 +59,7 @@ class LogIn extends Component {
             autoCapitalize="none"
             autoComplete="email"
             keyboardType="email-address"
-            onChangeText={text => this.setState({ username: text })}
+            onChangeText={text => this.setState({ mail: text })}
           />
           <Input
             placeholder="Contraseña"
