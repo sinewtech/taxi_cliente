@@ -105,7 +105,6 @@ export default class Home extends React.Component {
 
       location: null,
       errorMessage: null,
-
       busqueda: "",
       active: false,
       flowStatus: FLOW_STATUS_NONE,
@@ -129,14 +128,6 @@ export default class Home extends React.Component {
 
     firebase.auth().onAuthStateChanged(user => {
       if (user) {
-        // User is signed in.
-        /*var displayName = user.displayName;
-        var email = user.email;
-        var emailVerified = user.emailVerified;
-        var photoURL = user.photoURL;
-        var isAnonymous = user.isAnonymous;
-        var uid = user.uid;
-        var providerData = user.providerData;*/
         save(user);
         register();
       } else {
@@ -144,7 +135,6 @@ export default class Home extends React.Component {
       }
     });
   }
-
   wait = () => {
     this.setState({ flowStatus: FLOW_STATUS_WAITING });
   };
@@ -169,6 +159,7 @@ export default class Home extends React.Component {
 
           responseJson.results.map(candidate => {
             cont++;
+            candidate.persist();
             markers.push(
               <MapView.Marker
                 key={cont}
@@ -180,15 +171,26 @@ export default class Home extends React.Component {
                 description={candidate.formatted_address}
                 pincolor="red"
                 onPress={async () => {
-                  await this.setState({
-                    destination: {
-                      name: candidate.name,
-                      lat: candidate.geometry.location.lat,
-                      lng: candidate.geometry.location.lng,
-                    },
-                    flowStatus: FLOW_STATUS_QUOTING,
-                  });
-                  await this.getPoly();
+                  let tiene = await Location.getProviderStatusAsync();
+                  if (tiene.gpsAvailable) {
+                    let gpslocation = await Location.getCurrentPositionAsync({});
+                    console.log("current", gpslocation);
+                    await this.setState({
+                      origin: {
+                        lat: gpslocation.coords.latitude,
+                        lng: gpslocation.coords.longitude,
+                      },
+                      destination: {
+                        name: "Marcador",
+                        lat: candidate.nativeEvent.coordinate.latitude,
+                        lng: candidate.nativeEvent.coordinate.longitude,
+                      },
+                      flowStatus: FLOW_STATUS_QUOTING,
+                    });
+                    await this.getPoly();
+                  } else {
+                    Aler;
+                  }
                 }}
               />
             );
@@ -265,16 +267,21 @@ export default class Home extends React.Component {
               description={responseJson.result.formatted_address}
               pincolor="red"
               onPress={async () => {
-                await this.setState({
-                  destination: {
-                    name: responseJson.result.name,
-                    lat: responseJson.result.geometry.location.lat,
-                    lng: responseJson.result.geometry.location.lng,
-                  },
-                  flowStatus: FLOW_STATUS_QUOTING,
-                });
+                let tiene = await Location.getProviderStatusAsync();
+                if (tiene.gpsAvailable) {
+                  await this.setState({
+                    destination: {
+                      name: responseJson.result.name,
+                      lat: responseJson.result.geometry.location.lat,
+                      lng: responseJson.result.geometry.location.lng,
+                    },
+                    flowStatus: FLOW_STATUS_QUOTING,
+                  });
 
-                await this.getPoly();
+                  await this.getPoly();
+                } else {
+                  Alert.alert("Servicios GPS", "Por favor active los servicios GPS");
+                }
               }}
             />
           );
@@ -319,7 +326,6 @@ export default class Home extends React.Component {
       .then(pushToken => {
         console.log(pushToken);
         if (pushToken) {
-          console.log("entre :V");
           db.collection("clients")
             .doc(this.state.userUID)
             .get()
@@ -333,12 +339,14 @@ export default class Home extends React.Component {
                     console.log("Pushtoken ya existe para usuario.");
                     return;
                   } else {
-                    pushTokens.push(deviceJson[token]);
+                    console.log("agregue :v");
+                    pushTokens.push(pushToken);
                   }
                 }
               } else {
                 pushTokens.push(pushToken);
               }
+              console.log("celulares", pushTokens);
               db.collection("clients")
                 .doc(this.state.userUID)
                 .update({
@@ -372,7 +380,7 @@ export default class Home extends React.Component {
     let location = await Location.getCurrentPositionAsync({});
     this.setState({ location });
   };
-  
+
   _handleNotification = notification => {
     if (notification.data.id == 1) {
       console.log("Quote recibida: ", notification);
@@ -442,32 +450,40 @@ export default class Home extends React.Component {
     };
 
     this.wait();
-    await this._getLocationAsync();
+    let data = {};
+    console.log("estoy aqui");
+    let tiene = await Location.getProviderStatusAsync();
+    if (tiene.gpsAvailable) {
+      console.log("Esta activados");
+      await this._getLocationAsync();
+      data = {
+        userUID: this.state.userUID,
+        origin: {
+          address: "Ubicación del Cliente",
+          lat: this.state.location.coords.latitude,
+          lng: this.state.location.coords.longitude,
+        },
+        destination: this.state.destination,
+        status: QUOTE_STATUS_PENDING,
+      };
+      console.log("Enviando orden", data);
+      var key = firebase
+        .database()
+        .ref()
+        .child("quotes")
+        .push().key;
+      var updates = {};
+      updates["/quotes/" + key] = data;
 
-    let data = {
-      userUID: this.state.userUID,
-      origin: {
-        address: "Ubicación del Cliente",
-        lat: this.state.location.coords.latitude,
-        lng: this.state.location.coords.longitude,
-      },
-      destination: this.state.destination,
-      status: QUOTE_STATUS_PENDING,
-    };
-    console.log("Enviando orden", data);
-
-    var key = firebase
-      .database()
-      .ref()
-      .child("quotes")
-      .push().key;
-    var updates = {};
-    updates["/quotes/" + key] = data;
-
-    firebase
-      .database()
-      .ref()
-      .update(updates, error => (error ? quoteError() : quoteSuccess()));
+      firebase
+        .database()
+        .ref()
+        .update(updates, error => (error ? quoteError() : quoteSuccess()));
+    } else {
+      console.log("no Esta activados");
+      Alert.alert("Servicios GPS", "Por favor active los servicios GPS");
+      quoteError();
+    }
   };
 
   handleConfirm = () => {
@@ -611,36 +627,46 @@ export default class Home extends React.Component {
     return true;
   };
 
-  handleLongPress(location) {
+  handleLongPress = marketlocation => {
     let markers = [];
-    //console.log(location);
-
+    marketlocation.persist();
     markers.push(
       <MapView.Marker
-        key={location.timeStamp}
+        key={marketlocation.timeStamp}
         coordinate={{
-          latitude: location.nativeEvent.coordinate.latitude,
-          longitude: location.nativeEvent.coordinate.longitude,
+          latitude: marketlocation.nativeEvent.coordinate.latitude,
+          longitude: marketlocation.nativeEvent.coordinate.longitude,
         }}
         title={"Ir a esta dirección"}
         description={"Marcador manual"}
         pincolor="red"
         onPress={async () => {
-          await this.setState({
-            destination: {
-              name: "Marcador",
-              lat: location.nativeEvent.coordinate.latitude,
-              lng: location.nativeEvent.coordinate.longitude,
-            },
-            flowStatus: FLOW_STATUS_QUOTING,
-          });
-          await this.getPoly();
+          let tiene = await Location.getProviderStatusAsync();
+          console.log("wenas esta aqui", tiene);
+          if (tiene.gpsAvailable) {
+            let gpslocation = await Location.getCurrentPositionAsync({});
+            await this.setState({
+              origin: {
+                lat: gpslocation.coords.latitude,
+                lng: gpslocation.coords.longitude,
+              },
+              destination: {
+                name: "Marcador",
+                lat: marketlocation.nativeEvent.coordinate.latitude,
+                lng: marketlocation.nativeEvent.coordinate.longitude,
+              },
+              flowStatus: FLOW_STATUS_QUOTING,
+            });
+            await this.getPoly();
+          } else {
+            Alert.alert("Servicios GPS", "Por favor active los servicios GPS");
+          }
         }}
       />
     );
 
     this.setState({ markers });
-  }
+  };
 
   handlePoiClick(location) {
     this.placeDetails(location.nativeEvent.placeId);
@@ -679,7 +705,7 @@ export default class Home extends React.Component {
         return (
           <View style={{ flex: 1 }}>
             <MapView
-              onLongPress={this.handleLongPress.bind(this)}
+              onLongPress={this.handleLongPress}
               onPoiClick={this.handlePoiClick.bind(this)}
               showsUserLocation={true}
               followsUserLocation={true}
@@ -725,7 +751,7 @@ export default class Home extends React.Component {
                     color="#212121"
                     size={20}
                     onPress={() => {
-                      this.props.navigation.openDrawer();
+                      // this.props.navigation.openDrawer();
                       console.log("Menu pressed");
                     }}
                   />

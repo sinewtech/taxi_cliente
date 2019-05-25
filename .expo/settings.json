@@ -1,11 +1,7 @@
 {
-<<<<<<< HEAD
-  "hostType": "localhost",
-=======
   "hostType": "lan",
->>>>>>> 2cae4b10f255706ecb25c14362283a5229050acc
   "lanType": "ip",
   "dev": true,
   "minify": false,
-  "urlRandomness": "h5-h2x"
+  "urlRandomness": "kv-h5i"
 }
