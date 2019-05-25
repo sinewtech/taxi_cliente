@@ -6,10 +6,10 @@ class SignUp extends Component {
   constructor() {
     super();
     this.state = {
-      mail: "davidm@sinewave.tech",
-      password: "das",
-      phone: "+504 8981-4814",
-      name: "David Mendoza",
+      mail: "",
+      password: "",
+      phone: "",
+      name: "",
     };
   }
   handleRegister = () => {

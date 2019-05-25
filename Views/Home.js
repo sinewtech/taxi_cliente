@@ -215,6 +215,12 @@ export default class Home extends React.Component {
         console.error(error);
       });
   };
+  componentDidMount = async () => {
+    let { status } = await Permissions.askAsync(Permissions.LOCATION);
+    if (status !== "granted") {
+      Alert.alert("Servicios GPS", "Por favor deje que el app pueda trabajar con el gps");
+    }
+  };
 
   autocompleteSearch = query => {
     this.setState({
@@ -751,7 +757,7 @@ export default class Home extends React.Component {
                     color="#212121"
                     size={20}
                     onPress={() => {
-                      // this.props.navigation.openDrawer();
+                      this.props.navigation.openDrawer();
                       console.log("Menu pressed");
                     }}
                   />

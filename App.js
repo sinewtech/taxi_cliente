@@ -9,6 +9,7 @@ import {
   createStackNavigator,
   createSwitchNavigator,
 } from "react-navigation";
+import LogOut from "./Components/LogOut";
 
 class App extends Component {
   render() {
@@ -19,6 +20,12 @@ class App extends Component {
 const AppStack = createDrawerNavigator({
   Home: {
     screen: Home,
+  },
+  Waiting: {
+    screen: LogOut,
+    navigationOptions: ({ navigation }) => ({
+      title: "LogOut",
+    }),
   },
 });
 
