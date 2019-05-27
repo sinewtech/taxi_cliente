@@ -16,10 +16,17 @@
     "updates": {
       "fallbackToCacheTimeout": 0
     },
+    "androidStatusBar": {
+      "backgroundColor": "#ffc107"
+    },
     "assetBundlePatterns": ["**/*"],
     "android": {
       "package": "tech.sinewave.taxi",
       "googleServicesFile": "./google-services.json"
+    },
+    "notification": {
+      "icon": "./assets/icon.png",
+      "color": "#ffc107"
     },
     "ios": {
       "supportsTablet": true,
