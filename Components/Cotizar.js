@@ -93,13 +93,13 @@ export class CotizarConfirmar extends React.Component {
                 </Text>
                 <View style={styles.buttonRow} flex={1}>
                     <Button
-                        style={styles.buyButton}
+                        style={styles.button}
                         title="Cancelar"
                         color="#f44336"
                         onPress={this.props.onCancel}
                     />
                     <Button
-                        style={styles.buyButton}
+                        style={styles.button}
                         title="Pedir Taxi"
                         color="#4CAF50"
                         onPress={this.props.onConfirm}
@@ -239,6 +239,7 @@ const styles = StyleSheet.create({
 
     buttonRow: {
         flex: 1,
+        flexDirection: "row"
     },
 
     button: {
