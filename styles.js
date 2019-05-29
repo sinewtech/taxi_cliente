@@ -45,11 +45,11 @@ export const styles = StyleSheet.create({
   },
 
   resultViewShown: {
-    transform: [
+    /*transform: [
       {
         translateY: -(Dimensions.get("window").height * 0.56),
       },
-    ],
+    ],*/
     height: "88%",
     width: "100%",
     marginLeft: 0,
@@ -64,7 +64,7 @@ export const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     borderRadius: 10,
-    marginTop: 35,
+    marginTop: 10,
     marginRight: 10,
     marginLeft: 15,
     backgroundColor: "#ffffff",
@@ -102,7 +102,7 @@ export const styles = StyleSheet.create({
       height: 10,
     },
     shadowOpacity: 1,
-    marginTop: 35,
+    marginTop: 10,
     marginRight: 15,
     overflow: "hidden",
   },
@@ -214,7 +214,7 @@ export let searchActiveAnimation = Animated.parallel([
     easing: Easing.bezier(0.77, 0, 0.175, 1),
   }),
   Animated.timing(animatedStyles.resultView.height, {
-    toValue: Dimensions.get("window").height * 0.88,
+    toValue: Dimensions.get("window").height * 0.50,
     duration: 250,
     easing: Easing.bezier(0.77, 0, 0.175, 1),
   }),

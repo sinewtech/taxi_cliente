@@ -15,5 +15,8 @@
     "firebase-functions": "^2.2.0",
     "node-fetch": "^2.6.0"
   },
-  "private": true
+  "private": true,
+  "engines": {
+    "node": "6"
+  }
 }

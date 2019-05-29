@@ -1,5 +1,5 @@
 import React from "react";
-import { Text, View, StyleSheet, TouchableOpacity } from "react-native";
+import { Text, View, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { Icon, Button, Divider } from "react-native-elements";
 
 export default class Cotizar extends React.Component {
@@ -130,19 +130,34 @@ export class CotizarError extends React.Component {
 }
 
 export class CotizarAceptar extends React.Component {
+    handleCancel = () => {
+        Alert.alert(
+          "Cancelando carrera",
+          "¿Estas seguro de que quieres cancelar tu carrera?",
+          [
+            { text: "Regresar" },
+            {
+              text: "Cancelar Carrera",
+              onPress: this.props.cancel,
+              style: "cancel",
+            },
+          ]
+        );
+    }
+
     render() {
         return (
             <View style={styles.mainView}>
                 <View flex={2}>
                     <Icon name="check-circle" size={70} color="#4CAF50" />
                 </View>
-                <Text flex={1}>¡Éxito!</Text>
                 <Text style={styles.displayTitle} flex={1}>
                     Tu unidad ya va en camino.
               </Text>
                 <Text style={styles.disclaimer} flex={1}>
                     ¡Gracias por tu preferencia!
               </Text>
+              <Button flex={1} onPress={this.handleCancel} title="Cancelar carrera"/>
             </View>
         );
     }
