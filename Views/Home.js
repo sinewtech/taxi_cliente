@@ -442,8 +442,23 @@ export default class Home extends React.Component {
   activate() {
     this.setState({
       active: true,
-      flowStatus: FLOW_STATUS_NONE,
+      flowStatus: FLOW_STATUS_NONE
     });
+  }
+
+  clear = () => {
+    this.setState({
+      active: false,
+      flowStatus: FLOW_STATUS_NONE,
+      polyline: [],
+      markers: [],
+      lugares: [],
+      busqueda: ""
+    });
+  }
+
+  cancelOrder = () => {
+    this.clear();
   }
 
   handleQuote = async () => {
@@ -551,7 +566,7 @@ export default class Home extends React.Component {
         case FLOW_STATUS_ERROR:
           return <CotizarError onConfirm={() => this.setState({ flowStatus: FLOW_STATUS_NONE })} />;
         case FLOW_STATUS_CONFIRMED:
-          return <CotizarAceptar />;
+          return <CotizarAceptar cancel={this.cancelOrder}/>;
         default:
           break;
       }
