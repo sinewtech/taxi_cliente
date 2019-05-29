@@ -6,7 +6,7 @@ export default class Bienvenida extends React.Component {
     return (
       <View style={styles.welcomeView}>
         <View style={styles.welcomeTextView}>
-          <Text style={styles.welcomeText}>¿A dónde vamos hoy?</Text>
+          <Text style={styles.welcomeText}>{this.props.selectingOrigin ? "¿De dónde partiremos?" : "¿A dónde vamos hoy?"}</Text>
         </View>
         <View style={styles.lugaresFrecuentes}>
           <LugarFrecuente icon="add" name="Nuevo Lugar Frecuente" />

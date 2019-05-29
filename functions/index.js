@@ -31,148 +31,155 @@ location.post("/", (req, res) => {
 
 exports.location = functions.https.onRequest(location);
 
-exports.custom_marker_reference = functions.database.ref("quotes/{uid}").onCreate((snapshot, context) => {
-  let data = snapshot.exportVal();
-  if (data.destination.name == "Marcador") {
-    let query =
-      "https://maps.googleapis.com/maps/api/place/nearbysearch/json?key=" +
-      API_KEY +
-      "&location=" +
-      data.destination.lat +
-      "," +
-      data.destination.lng +
-      "&radius=" + REFERENCE_RADIUS;
+exports.custom_marker_reference = functions.database
+  .ref("quotes/{uid}")
+  .onCreate((snapshot, context) => {
+    let data = snapshot.exportVal();
+    if (data.destination.name == "Marcador") {
+      let query =
+        "https://maps.googleapis.com/maps/api/place/nearbysearch/json?key=" +
+        API_KEY +
+        "&location=" +
+        data.destination.lat +
+        "," +
+        data.destination.lng +
+        "&radius=" +
+        REFERENCE_RADIUS;
 
-    fetch(query)
-      .then(response => response.json())
-      .then(responseJson => {
-        let foundPlace = false;
+      fetch(query)
+        .then(response => response.json())
+        .then(responseJson => {
+          let foundPlace = false;
 
-        for (let place of responseJson.results) {
-          if (place.name != "Tegucigalpa") {
-            console.log("Se encontró un lugar cercano:", place.name);
-            foundPlace = true;
-            console.log("UID", context.params.uid);
+          for (let place of responseJson.results) {
+            if (place.name != "Tegucigalpa") {
+              console.log("Se encontró un lugar cercano:", place.name);
+              foundPlace = true;
+              console.log("UID", context.params.uid);
 
-            let detailsQuery =
-              "https://maps.googleapis.com/maps/api/place/details/json?key=" +
-              API_KEY +
-              "&placeid=" +
-              place.place_id;
+              let detailsQuery =
+                "https://maps.googleapis.com/maps/api/place/details/json?key=" +
+                API_KEY +
+                "&placeid=" +
+                place.place_id;
 
-            fetch(detailsQuery)
-              .then(detailsResponse => detailsResponse.json())
-              .then(detailsResponseJson => {
-                var updates = {};
-                updates["/quotes/" + context.params.uid + "/destination/name"] =
-                  "Cerca de " + place.name;
-                updates["/quotes/" + context.params.uid + "/destination/address"] =
-                  detailsResponseJson.result.formatted_address;
+              fetch(detailsQuery)
+                .then(detailsResponse => detailsResponse.json())
+                .then(detailsResponseJson => {
+                  var updates = {};
+                  updates["/quotes/" + context.params.uid + "/destination/name"] =
+                    "Cerca de " + place.name;
+                  updates["/quotes/" + context.params.uid + "/destination/address"] =
+                    detailsResponseJson.result.formatted_address;
 
-                admin
-                  .database()
-                  .ref()
-                  .update(updates);
-              })
-              .catch(e => {
-                console.error(e);
-                return false;
-              });
+                  admin
+                    .database()
+                    .ref()
+                    .update(updates);
+                })
+                .catch(e => {
+                  console.error(e);
+                  return false;
+                });
 
-            break;
+              break;
+            }
           }
-        }
 
-        if (!foundPlace) {
-          console.log("Lugar cercano no encontrado.");
-          var updates = {};
-          updates["/quotes/" + context.params.uid + "/destination/name"] = "Ubicación Exacta";
-          updates["/quotes/" + context.params.uid + "/destination/address"] =
-            "Lat: " + data.destination.lat + " | Lon: " + data.destination.lng;
-          admin
-            .database()
-            .ref()
-            .update(updates);
-        }
-      })
-      .catch(e => {
-        console.error(e);
-        return false;
-      });
-  }
+          if (!foundPlace) {
+            console.log("Lugar cercano no encontrado.");
+            var updates = {};
+            updates["/quotes/" + context.params.uid + "/destination/name"] = "Ubicación Exacta";
+            updates["/quotes/" + context.params.uid + "/destination/address"] =
+              "Lat: " + data.destination.lat + " | Lon: " + data.destination.lng;
+            admin
+              .database()
+              .ref()
+              .update(updates);
+          }
+        })
+        .catch(e => {
+          console.error(e);
+          return false;
+        });
+    }
 
-  return true;
-});
+    return true;
+  });
 
 exports.operator_notification = functions.database
   .ref("quotes/{uid}")
   .onCreate((snapshot, context) => {
     let data = snapshot.exportVal();
-    let query =
-      "https://maps.googleapis.com/maps/api/place/nearbysearch/json?key=" +
-      API_KEY +
-      "&location=" +
-      data.origin.lat +
-      "," +
-      data.origin.lng +
-      "&radius=" + REFERENCE_RADIUS;
 
-    fetch(query)
-      .then(response => response.json())
-      .then(responseJson => {
-        let foundPlace = false;
+    if (data.usingGps && !data.manual) {
+      let query =
+        "https://maps.googleapis.com/maps/api/place/nearbysearch/json?key=" +
+        API_KEY +
+        "&location=" +
+        data.origin.lat +
+        "," +
+        data.origin.lng +
+        "&radius=" +
+        REFERENCE_RADIUS;
 
-        for (let place of responseJson.results) {
-          if (place.name != "Tegucigalpa") {
-            console.log("Se encontró un lugar cercano:", place.name);
-            foundPlace = true;
-            console.log("UID", context.params.uid);
+      fetch(query)
+        .then(response => response.json())
+        .then(responseJson => {
+          let foundPlace = false;
 
-            let detailsQuery =
-              "https://maps.googleapis.com/maps/api/place/details/json?key=" +
-              API_KEY +
-              "&placeid=" +
-              place.place_id;
+          for (let place of responseJson.results) {
+            if (place.name != "Tegucigalpa") {
+              console.log("Se encontró un lugar cercano:", place.name);
+              foundPlace = true;
+              console.log("UID", context.params.uid);
 
-            fetch(detailsQuery)
-              .then(detailsResponse => detailsResponse.json())
-              .then(detailsResponseJson => {
-                var updates = {};
-                updates["/quotes/" + context.params.uid + "/origin/name"] =
-                  "Cerca de " + place.name;
-                updates["/quotes/" + context.params.uid + "/origin/address"] =
-                  detailsResponseJson.result.formatted_address;
+              let detailsQuery =
+                "https://maps.googleapis.com/maps/api/place/details/json?key=" +
+                API_KEY +
+                "&placeid=" +
+                place.place_id;
 
-                admin
-                  .database()
-                  .ref()
-                  .update(updates);
-              })
-              .catch(e => {
-                console.error(e);
-                return false;
-              });
+              fetch(detailsQuery)
+                .then(detailsResponse => detailsResponse.json())
+                .then(detailsResponseJson => {
+                  var updates = {};
+                  updates["/quotes/" + context.params.uid + "/origin/name"] =
+                    "Cerca de " + place.name;
+                  updates["/quotes/" + context.params.uid + "/origin/address"] =
+                    detailsResponseJson.result.formatted_address;
 
-            break;
+                  admin
+                    .database()
+                    .ref()
+                    .update(updates);
+                })
+                .catch(e => {
+                  console.error(e);
+                  return false;
+                });
+
+              break;
+            }
           }
-        }
 
-        if (!foundPlace) {
-          console.log("Lugar cercano no encontrado.");
-          var updates = {};
-          updates["/quotes/" + context.params.uid + "/origin/name"] = "Ubicación Exacta";
-          updates["/quotes/" + context.params.uid + "/origin/address"] =
-            "Lat: " + data.origin.lat + " | Lon: " + data.origin.lng;
-          admin
-            .database()
-            .ref()
-            .update(updates);
-        }
-      })
-      .catch(e => {
-        console.error(e);
-        return false;
-      });
+          if (!foundPlace) {
+            console.log("Lugar cercano no encontrado.");
+            var updates = {};
+            updates["/quotes/" + context.params.uid + "/origin/name"] = "Ubicación Exacta";
+            updates["/quotes/" + context.params.uid + "/origin/address"] =
+              "Lat: " + data.origin.lat + " | Lon: " + data.origin.lng;
+            admin
+              .database()
+              .ref()
+              .update(updates);
+          }
+        })
+        .catch(e => {
+          console.error(e);
+          return false;
+        });
+    }
 
     admin
       .database()

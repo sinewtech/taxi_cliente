@@ -1,10 +1,10 @@
 {
   "expoServerPort": 19000,
   "packagerPort": 19001,
-  "packagerPid": 84528,
-  "expoServerNgrokUrl": "https://kv-h5i.imadogsi.taxi-cliente.exp.direct",
-  "packagerNgrokUrl": "https://packager.kv-h5i.imadogsi.taxi-cliente.exp.direct",
-  "ngrokPid": 83348,
+  "packagerPid": 61700,
+  "expoServerNgrokUrl": "https://sy-gqs.imadogsi.taxi-cliente.exp.direct",
+  "packagerNgrokUrl": "https://packager.sy-gqs.imadogsi.taxi-cliente.exp.direct",
+  "ngrokPid": 85084,
   "devToolsPort": 19002,
   "webpackServerPort": null
 }

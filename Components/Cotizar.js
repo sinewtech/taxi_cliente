@@ -12,7 +12,7 @@ export default class Cotizar extends React.Component {
                         <View style={styles.rutaInputs}>
                             <TouchableOpacity
                                 style={styles.rutaSelect}
-                                onPress={() => console.log("pressed")}
+                                onPress={this.props.selectOrigin}
                             >
                                 <Icon
                                     style={styles.selectIcon}
@@ -21,7 +21,7 @@ export default class Cotizar extends React.Component {
                                     color="#FF9800"
                                     size={15}
                                 />
-                                <Text style={styles.origenText}>{"Mi ubicación (GPS)"}</Text>
+                                <Text style={styles.origenText}>{this.props.usingGps ? "Mi ubicación (GPS)" : this.props.origin}</Text>
                                 <Icon
                                     style={styles.rutaIcon}
                                     name="edit"
@@ -32,7 +32,7 @@ export default class Cotizar extends React.Component {
                             <Divider style={styles.divider}/>
                             <TouchableOpacity
                                 style={styles.rutaSelect}
-                                onPress={() => console.log("pressed")}
+                                onPress={this.props.selectDestination}
                             >
                                 <Icon
                                     style={styles.selectIcon}
@@ -64,18 +64,19 @@ export default class Cotizar extends React.Component {
 export class CotizarExito extends React.Component {
     render() {
         return (
-            <View style={styles.mainView}>
-                <View flex={2}>
-                    <Icon name="check-circle" size={70} color="#4CAF50" />
-                </View>
-                <Text flex={1}>Cotizando taxi a</Text>
-                <Text style={styles.displayTitle} flex={1}>
-                    {this.props.destination}
-                </Text>
-                <Text style={styles.disclaimer} flex={1}>
-                    Recibirás en breve una notificación con el precio.
-              </Text>
+          <View style={styles.mainView}>
+            <View flex={2}>
+              <Icon name="check-circle" size={70} color="#4CAF50" />
             </View>
+            <Text flex={1}>Cotizando taxi a</Text>
+            <Text style={styles.displayTitle} flex={1}>
+              {this.props.destination}
+            </Text>
+            <Text style={styles.disclaimer} flex={1}>
+              Recibirás en breve una notificación con el precio.
+            </Text>
+            <Button flex={1} onPress={this.props.onCancel} title="Cancelar carrera" />
+          </View>
         );
     }
 }
@@ -130,21 +131,6 @@ export class CotizarError extends React.Component {
 }
 
 export class CotizarAceptar extends React.Component {
-    handleCancel = () => {
-        Alert.alert(
-          "Cancelando carrera",
-          "¿Estas seguro de que quieres cancelar tu carrera?",
-          [
-            { text: "Regresar" },
-            {
-              text: "Cancelar Carrera",
-              onPress: this.props.cancel,
-              style: "cancel",
-            },
-          ]
-        );
-    }
-
     render() {
         return (
             <View style={styles.mainView}>
@@ -157,7 +143,7 @@ export class CotizarAceptar extends React.Component {
                 <Text style={styles.disclaimer} flex={1}>
                     ¡Gracias por tu preferencia!
               </Text>
-              <Button flex={1} onPress={this.handleCancel} title="Cancelar carrera"/>
+              <Button flex={1} onPress={this.props.onCancel} title="Cancelar carrera"/>
             </View>
         );
     }
