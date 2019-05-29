@@ -3,3 +3,5 @@ node_modules
 package-lock.json
 package-info.json
 settings.json
+.expo/packager-info.json
+.expo/settings.json
