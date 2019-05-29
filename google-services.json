@@ -8,6 +8,35 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:503391985374:android:e535d75a16225f19",
+        "android_client_info": {
+          "package_name": "tech.sinewave.driver"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "503391985374-13gudcmo7ldi59a0nq60vdijnntkffr8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCShjT06lRO06BHrWfwjIiXD0eKF8h8rEU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "503391985374-13gudcmo7ldi59a0nq60vdijnntkffr8.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:503391985374:android:59e6195ddb40fdaa",
         "android_client_info": {
           "package_name": "tech.sinewave.taxi"

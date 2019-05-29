@@ -160,10 +160,11 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     color: "#616161",
   },
-
 });
 
-export let animatedStyles = {
+export let resultViewAnimation = new Animated.Value(0);
+
+/*export let animatedStyles = {
   resultView: {
     width: new Animated.Value(Dimensions.get("window").width * 0.92),
     height: new Animated.Value(Dimensions.get("window").height * 0.32),
@@ -172,9 +173,50 @@ export let animatedStyles = {
     borderTopLeftRadius: new Animated.Value(10),
     borderTopRightRadius: new Animated.Value(10),
   },
+};*/
+
+export let animatedStyles = {
+  resultView: {
+    width: resultViewAnimation.interpolate({
+      inputRange: [0, 1],
+      outputRange: ["92%", "100%"],
+    }),
+    height: resultViewAnimation.interpolate({
+      inputRange: [0, 1],
+      outputRange: ["32%", "88%"],
+    }),
+    marginLeft: resultViewAnimation.interpolate({
+      inputRange: [0, 1],
+      outputRange: ["4%", "0%"],
+    }),
+    marginRight: resultViewAnimation.interpolate({
+      inputRange: [0, 1],
+      outputRange: ["4%", "0%"],
+    }),
+    borderTopLeftRadius: resultViewAnimation.interpolate({
+      inputRange: [0, 1],
+      outputRange: [5, 0],
+    }),
+    borderTopRightRadius: resultViewAnimation.interpolate({
+      inputRange: [0, 1],
+      outputRange: [5, 0],
+    }),
+  },
 };
 
-export let searchInactiveAnimation = Animated.parallel([
+export let searchInactiveAnimation = Animated.timing(resultViewAnimation, {
+  toValue: 0,
+  duration: 300,
+  easing: Easing.bezier(0.77, 0, 0.175, 1),
+});
+
+export let searchActiveAnimation = Animated.timing(resultViewAnimation, {
+  toValue: 1,
+  duration: 300,
+  easing: Easing.bezier(0.77, 0, 0.175, 1),
+});
+
+/*export let searchInactiveAnimation = Animated.parallel([
   Animated.timing(animatedStyles.resultView.width, {
     toValue: Dimensions.get("window").width * 0.92,
     duration: 250,
@@ -239,3 +281,4 @@ export let searchActiveAnimation = Animated.parallel([
     easing: Easing.bezier(0.77, 0, 0.175, 1),
   }),
 ]);
+*/

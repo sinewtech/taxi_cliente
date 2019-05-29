@@ -173,32 +173,36 @@ export default class Home extends React.Component {
                 description={candidate.formatted_address}
                 pincolor="red"
                 onPress={async () => {
-                  let location = await Location.getProviderStatusAsync();
+                  if (this.state.flowStatus === FLOW_STATUS_NONE) {
+                    let location = await Location.getProviderStatusAsync();
 
-                  if (location.gpsAvailable && this.state.usingGps) {
-                    let gpslocation = await Location.getCurrentPositionAsync();
-                    console.log("Current Location", gpslocation);
+                    if (location.gpsAvailable && this.state.usingGps) {
+                      let gpslocation = await Location.getCurrentPositionAsync();
+                      console.log("Current Location", gpslocation);
 
-                    await this.setState({
-                      origin: {
-                        lat: gpslocation.coords.latitude,
-                        lng: gpslocation.coords.longitude,
-                      },
+                      await this.setState({
+                        origin: {
+                          lat: gpslocation.coords.latitude,
+                          lng: gpslocation.coords.longitude,
+                        },
 
-                      destination: {
-                        name: "Marcador",
-                        lat: candidate.nativeEvent.coordinate.latitude,
-                        lng: candidate.nativeEvent.coordinate.longitude,
-                      },
-                      flowStatus: FLOW_STATUS_QUOTING,
-                    });
+                        destination: {
+                          name: "Marcador",
+                          lat: candidate.nativeEvent.coordinate.latitude,
+                          lng: candidate.nativeEvent.coordinate.longitude,
+                        },
+                        flowStatus: FLOW_STATUS_QUOTING,
+                      });
 
-                    await this.getPoly();
+                      await this.getPoly();
+                    } else {
+                      Alert.alert(
+                        "Servicios GPS",
+                        "Por favor active los servicios de GPS para continuar."
+                      );
+                    }
                   } else {
-                    Alert.alert(
-                      "Servicios GPS",
-                      "Por favor active los servicios de GPS para continuar."
-                    );
+                    Alert.alert("Error", "Solo puedes pedir una carrera a la vez.");
                   }
                 }}
               />
@@ -287,34 +291,36 @@ export default class Home extends React.Component {
               description={responseJson.result.formatted_address}
               pincolor={this.state.selectingLocation == "origin" ? "blue" : "red"}
               onPress={async () => {
-                let location = await Location.getProviderStatusAsync();
+                if (this.state.flowStatus === FLOW_STATUS_NONE) {
+                  let location = await Location.getProviderStatusAsync();
 
-                if (location.gpsAvailable) {
-                  await this.setState({
-                    flowStatus: FLOW_STATUS_QUOTING,
-                  });
-
-                  if (this.state.selectingLocation == "origin") {
+                  if (location.gpsAvailable) {
                     await this.setState({
-                      origin: {
-                        name: responseJson.result.name,
-                        lat: responseJson.result.geometry.location.lat,
-                        lng: responseJson.result.geometry.location.lng,
-                      },
+                      flowStatus: FLOW_STATUS_QUOTING,
                     });
+
+                    if (this.state.selectingLocation == "origin") {
+                      await this.setState({
+                        origin: {
+                          name: responseJson.result.name,
+                          lat: responseJson.result.geometry.location.lat,
+                          lng: responseJson.result.geometry.location.lng,
+                        },
+                      });
+                    } else {
+                      await this.setState({
+                        destination: {
+                          name: responseJson.result.name,
+                          lat: responseJson.result.geometry.location.lat,
+                          lng: responseJson.result.geometry.location.lng,
+                        },
+                      });
+                    }
+
+                    await this.getPoly();
                   } else {
-                    await this.setState({
-                      destination: {
-                        name: responseJson.result.name,
-                        lat: responseJson.result.geometry.location.lat,
-                        lng: responseJson.result.geometry.location.lng,
-                      },
-                    });
+                    Alert.alert("Servicios GPS", "Por favor active los servicios GPS");
                   }
-
-                  await this.getPoly();
-                } else {
-                  Alert.alert("Servicios GPS", "Por favor active los servicios GPS");
                 }
               }}
             />
@@ -481,12 +487,12 @@ export default class Home extends React.Component {
   deactivate = () => {
     if (this.state.flowStatus == FLOW_STATUS_NONE) {
       this.setState({ active: false, flowStatus: FLOW_STATUS_NONE });
-    }else{
+    } else {
       this.cancelOrder();
     }
 
     Keyboard.dismiss();
-  }
+  };
 
   activate() {
     this.setState({
@@ -504,7 +510,7 @@ export default class Home extends React.Component {
       lugares: [],
       busqueda: "",
       selectingLocation: "destination",
-      usingGps: true
+      usingGps: true,
     });
   };
 
@@ -517,7 +523,8 @@ export default class Home extends React.Component {
   };
 
   selectDestination = () => {
-    this.deactivate();
+    this.setState({ active: false, flowStatus: FLOW_STATUS_NONE, selectingLocation: "destination" });
+    Keyboard.dismiss();
   };
 
   cancelOrder = () => {
@@ -532,7 +539,6 @@ export default class Home extends React.Component {
       },
     ]);
   };
-
 
   handleQuote = async () => {
     let quoteSuccess = () => {
@@ -561,7 +567,7 @@ export default class Home extends React.Component {
           },
           destination: this.state.destination,
           status: QUOTE_STATUS_PENDING,
-          usingGps: this.state.usingGps
+          usingGps: this.state.usingGps,
         };
 
         console.log("Enviando orden", data);
@@ -570,6 +576,9 @@ export default class Home extends React.Component {
           .ref()
           .child("quotes")
           .push().key;
+
+        this.setState({ currentOrder: key });
+
         var updates = {};
         updates["/quotes/" + key] = data;
 
@@ -586,13 +595,13 @@ export default class Home extends React.Component {
         userUID: this.state.userUID,
         origin: {
           name: this.state.origin.name,
-          address: this.state.origin.address,
+          address: this.state.origin.address ? this.state.origin.address : "Adquiriendo punto de referencia...",
           lat: this.state.origin.lat,
           lng: this.state.origin.lng,
         },
         destination: this.state.destination,
         status: QUOTE_STATUS_PENDING,
-        usingGps: this.state.usingGps
+        usingGps: this.state.origin.address ? this.state.usingGps : true,
       };
 
       console.log("Enviando orden", data);
@@ -601,6 +610,9 @@ export default class Home extends React.Component {
         .ref()
         .child("quotes")
         .push().key;
+
+      this.setState({ currentOrder: key });
+
       var updates = {};
       updates["/quotes/" + key] = data;
 
@@ -613,7 +625,23 @@ export default class Home extends React.Component {
 
   handleConfirm = () => {
     this.wait();
-    this.setState({ flowStatus: FLOW_STATUS_CONFIRMED });
+
+    if (this.state.currentOrder === undefined) {
+      this.setState({ flowStatus: FLOW_STATUS_ERROR });
+      return;
+    }
+
+    var updates = {};
+    updates["/quotes/" + this.state.currentOrder + "/status"] = 2;
+
+    firebase
+      .database()
+      .ref()
+      .update(updates, error =>
+        error
+          ? this.setState({ flowStatus: FLOW_STATUS_ERROR })
+          : this.setState({ flowStatus: FLOW_STATUS_CONFIRMED })
+      );
   };
 
   resultViewContent() {
@@ -662,10 +690,7 @@ export default class Home extends React.Component {
           );
         case FLOW_STATUS_SUCCESS:
           return (
-            <CotizarExito
-              destination={this.state.destination.name}
-              onCancel={this.cancelOrder}
-            />
+            <CotizarExito destination={this.state.destination.name} onCancel={this.cancelOrder} />
           );
         case FLOW_STATUS_CONFIRMING:
           return (
@@ -677,14 +702,18 @@ export default class Home extends React.Component {
             />
           );
         case FLOW_STATUS_ERROR:
-          return <CotizarError onConfirm={this.clear}/>
+          return <CotizarError onConfirm={this.clear} />;
         case FLOW_STATUS_CONFIRMED:
           return <CotizarAceptar onCancel={this.cancelOrder} />;
         default:
           break;
       }
     } else if (this.state.busqueda == "") {
-      return this.state.active ? <Recientes /> : <Bienvenida selectingOrigin={this.state.selectingLocation == "origin"} />;
+      return this.state.active ? (
+        <Recientes />
+      ) : (
+        <Bienvenida selectingOrigin={this.state.selectingLocation == "origin"} />
+      );
     } else {
       if (this.state.lugares.length > 0) {
         let lugares = [];
@@ -719,7 +748,9 @@ export default class Home extends React.Component {
         return (
           <View>
             {this.state.active ? manualHeader : null}
-            <ScrollView>{lugares.map(suge => suge)}</ScrollView>
+            <ScrollView keyboardShouldPersistTaps={"handled"}>
+              {lugares.map(suge => suge)}
+            </ScrollView>
           </View>
         );
       } else {
@@ -750,7 +781,9 @@ export default class Home extends React.Component {
         return (
           <View>
             {this.state.active ? manualHeader : null}
-            <ScrollView>{sugerencias.map(suge => suge)}</ScrollView>
+            <ScrollView keyboardShouldPersistTaps={"handled"}>
+              {sugerencias.map(suge => suge)}
+            </ScrollView>
           </View>
         );
       }
@@ -768,8 +801,8 @@ export default class Home extends React.Component {
   };
 
   handleLongPress = marketlocation => {
-    if (this.state.flowStatus == FLOW_STATUS_NONE) return;
-    
+    if (this.state.flowStatus !== FLOW_STATUS_NONE) return;
+
     let markers = [];
     marketlocation.persist();
     markers.push(
@@ -783,53 +816,56 @@ export default class Home extends React.Component {
         description={"Marcador manual"}
         pincolor="red"
         onPress={async () => {
-          if (this.state.flowStatus == FLOW_STATUS_NONE) return;
+          if (this.state.flowStatus === FLOW_STATUS_NONE) {
+            if (this.state.usingGps) {
+              let location = await Location.getProviderStatusAsync();
 
-          if (this.state.usingGps) {
-            let location = await Location.getProviderStatusAsync();
+              if (location.gpsAvailable) {
+                let gpslocation = await Location.getCurrentPositionAsync({});
 
-            if (location.gpsAvailable) {
-              let gpslocation = await Location.getCurrentPositionAsync({});
+                await this.setState({
+                  origin: {
+                    lat: gpslocation.coords.latitude,
+                    lng: gpslocation.coords.longitude,
+                  },
+                  destination: {
+                    name: "Marcador",
+                    lat: marketlocation.nativeEvent.coordinate.latitude,
+                    lng: marketlocation.nativeEvent.coordinate.longitude,
+                  },
+                  flowStatus: FLOW_STATUS_QUOTING,
+                });
 
-              await this.setState({
-                origin: {
-                  lat: gpslocation.coords.latitude,
-                  lng: gpslocation.coords.longitude,
-                },
-                destination: {
-                  name: "Marcador",
-                  lat: marketlocation.nativeEvent.coordinate.latitude,
-                  lng: marketlocation.nativeEvent.coordinate.longitude,
-                },
-                flowStatus: FLOW_STATUS_QUOTING,
-              });
+                await this.getPoly();
+              } else {
+                Alert.alert(
+                  "Servicios GPS",
+                  "Por favor active los servicios de GPS para continuar."
+                );
+              }
+            } else {
+              if (this.state.selectingLocation == "origin") {
+                await this.setState({
+                  origin: {
+                    name: "Marcador",
+                    lat: marketlocation.nativeEvent.coordinate.latitude,
+                    lng: marketlocation.nativeEvent.coordinate.longitude,
+                  },
+                  flowStatus: FLOW_STATUS_QUOTING,
+                });
+              } else {
+                await this.setState({
+                  destination: {
+                    name: "Marcador",
+                    lat: marketlocation.nativeEvent.coordinate.latitude,
+                    lng: marketlocation.nativeEvent.coordinate.longitude,
+                  },
+                  flowStatus: FLOW_STATUS_QUOTING,
+                });
+              }
 
               await this.getPoly();
-            } else {
-              Alert.alert("Servicios GPS", "Por favor active los servicios de GPS para continuar.");
             }
-          } else {
-            if (this.state.selectingLocation == "origin") {
-              await this.setState({
-                origin: {
-                  name: "Marcador",
-                  lat: marketlocation.nativeEvent.coordinate.latitude,
-                  lng: marketlocation.nativeEvent.coordinate.longitude,
-                },
-                flowStatus: FLOW_STATUS_QUOTING,
-              });
-            } else {
-              await this.setState({
-                destination: {
-                  name: "Marcador",
-                  lat: marketlocation.nativeEvent.coordinate.latitude,
-                  lng: marketlocation.nativeEvent.coordinate.longitude,
-                },
-                flowStatus: FLOW_STATUS_QUOTING,
-              });
-            }
-
-            await this.getPoly();
           }
         }}
       />

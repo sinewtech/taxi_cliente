@@ -107,6 +107,62 @@ exports.custom_marker_reference = functions.database
     return true;
   });
 
+exports.confirm_quote = functions.database
+  .ref("quotes/{uid}")
+  .onUpdate((snapshot, context) => {
+    let dataBefore = snapshot.before.exportVal();
+    let dataAfter = snapshot.after.exportVal();
+
+    if (dataAfter.status == 2 && dataBefore.status != 2) {
+      console.log("Nueva orden confirmada");
+
+      return admin
+        .firestore()
+        .collection("drivers")
+        .doc(dataAfter.driver)
+        .get()
+        .then(snap => {
+          let data = snap.data();
+          let pushTokens = data["pushDevices"];
+
+          console.log("PushTokens:", pushTokens);
+
+          let messages = [];
+
+          pushTokens.forEach(token => {
+            messages.push({
+              to: token,
+              sound: "default",
+              body: "Carrera confirmada",
+              data: {
+                id: 3,
+              },
+            });
+          });          
+          
+          fetch("https://exp.host/--/api/v2/push/send", {
+            method: "POST",
+            mode: "no-cors",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json",
+              "Access-Control-Allow-Origin": "*",
+            },
+            body: JSON.stringify(messages),
+          });
+        })
+        .catch(e => console.error(e));
+    }else if (dataAfter.status == 4) {
+      var updates = {};
+      updates["/quotes/" + context.after.params.uid + "/status"] = 0;
+
+      return admin
+        .database()
+        .ref()
+        .update(updates);
+    }
+  });
+
 exports.operator_notification = functions.database
   .ref("quotes/{uid}")
   .onCreate((snapshot, context) => {
