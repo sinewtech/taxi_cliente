@@ -1,7 +1,7 @@
 {
   "expoServerPort": 19000,
-  "packagerPort": 19001,
-  "packagerPid": 61700,
+  "packagerPort": null,
+  "packagerPid": null,
   "expoServerNgrokUrl": "https://sy-gqs.imadogsi.taxi-cliente.exp.direct",
   "packagerNgrokUrl": "https://packager.sy-gqs.imadogsi.taxi-cliente.exp.direct",
   "ngrokPid": 85084,
