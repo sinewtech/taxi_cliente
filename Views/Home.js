@@ -387,14 +387,14 @@ export default class Home extends React.Component {
             .then(DocumentSnapshot => {
               let pushTokens = [];
               if (DocumentSnapshot.data()["pushDevices"]) {
-                console.log("existe");
+                console.log("PushDevices encontrado para usuario.");
                 let deviceJson = DocumentSnapshot.data()["pushDevices"];
                 for (var token in deviceJson) {
                   if (deviceJson[token] === pushToken) {
                     console.log("Pushtoken ya existe para usuario.");
                     return;
                   } else {
-                    console.log("agregue :v");
+                    console.log("Agregando nuevo PushToken", pushToken);
                     pushTokens.push(pushToken);
                   }
                 }
@@ -424,12 +424,11 @@ export default class Home extends React.Component {
       return true;
     });
   };
+
   _getLocationAsync = async () => {
     let { status } = await Permissions.askAsync(Permissions.LOCATION);
     if (status !== "granted") {
-      this.setState({
-        errorMessage: "Permission to access location was denied",
-      });
+      console.error("No se tiene permiso para el GPS");
     }
 
     let location = await Location.getCurrentPositionAsync({});
@@ -523,7 +522,11 @@ export default class Home extends React.Component {
   };
 
   selectDestination = () => {
-    this.setState({ active: false, flowStatus: FLOW_STATUS_NONE, selectingLocation: "destination" });
+    this.setState({
+      active: false,
+      flowStatus: FLOW_STATUS_NONE,
+      selectingLocation: "destination",
+    });
     Keyboard.dismiss();
   };
 
@@ -534,29 +537,37 @@ export default class Home extends React.Component {
         text: "Cancelar Carrera",
         onPress: () => {
           this.clear();
+          if (this.state.currentOrder){
+            firebase.database().ref("/quotes/" + this.state.currentOrder + "/status").set(-1);
+          }
         },
         style: "cancel",
       },
     ]);
   };
 
-  handleQuote = async () => {
-    let quoteSuccess = () => {
-      this.setState({ flowStatus: FLOW_STATUS_SUCCESS, usingGps: true });
-    };
+  quoteSuccess = () => {
+    this.setState({ flowStatus: FLOW_STATUS_SUCCESS, usingGps: true });
+  };
 
-    let quoteError = () => {
-      this.setState({ flowStatus: FLOW_STATUS_ERROR, usingGps: true });
-    };
+  quoteError = () => {
+    this.setState({ flowStatus: FLOW_STATUS_ERROR, usingGps: true });
+  };
+
+  handleQuote = async () => {
+    console.log("Preparando para enviar orden...");
 
     this.wait();
-
     let data = {};
-    let location = await Location.getProviderStatusAsync();
 
     if (this.state.usingGps) {
+      console.log("Enviando carrera con GPS...");
+
+      let location = await Location.getProviderStatusAsync();
+
       if (location.gpsAvailable) {
         await this._getLocationAsync();
+
         data = {
           userUID: this.state.userUID,
           origin: {
@@ -585,17 +596,21 @@ export default class Home extends React.Component {
         firebase
           .database()
           .ref()
-          .update(updates, error => (error ? quoteError() : quoteSuccess()));
+          .update(updates, error => (error ? this.quoteError() : this.quoteSuccess()));
       } else {
         Alert.alert("Servicios GPS", "Por favor active los servicios de GPS para continuar.");
         quoteError();
       }
     } else {
+      console.log("Enviando carrera con origen manual...");
+
       data = {
         userUID: this.state.userUID,
         origin: {
           name: this.state.origin.name,
-          address: this.state.origin.address ? this.state.origin.address : "Adquiriendo punto de referencia...",
+          address: this.state.origin.address
+            ? this.state.origin.address
+            : "Adquiriendo punto de referencia...",
           lat: this.state.origin.lat,
           lng: this.state.origin.lng,
         },
@@ -619,7 +634,7 @@ export default class Home extends React.Component {
       firebase
         .database()
         .ref()
-        .update(updates, error => (error ? quoteError() : quoteSuccess()));
+        .update(updates, error => (error ? this.quoteError() : this.quoteSuccess()));
     }
   };
 
@@ -683,11 +698,7 @@ export default class Home extends React.Component {
             />
           );
         case FLOW_STATUS_WAITING:
-          return (
-            <View className="fullCenter">
-              <ActivityIndicator size="large" color="#FF9800" />
-            </View>
-          );
+          return <ActivityIndicator size={50} color="#FF9800" style={styles.fullCenter} />;
         case FLOW_STATUS_SUCCESS:
           return (
             <CotizarExito destination={this.state.destination.name} onCancel={this.cancelOrder} />

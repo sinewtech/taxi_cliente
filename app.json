@@ -2,7 +2,7 @@
   "expo": {
     "name": "Taxi",
     "slug": "taxi_cliente",
-    "privacy": "public",
+    "privacy": "unlisted",
     "sdkVersion": "32.0.0",
     "platforms": ["ios", "android"],
     "version": "0.1.0",

@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import Home from "./Views/Home";
 import LogIn from "./Views/LogIn";
 import SignUp from "./Views/SignUp";
-import Waiting from "./Components/Waiting";
+import UserValidator from "./Components/UserValidator";
 import {
   createDrawerNavigator,
   createAppContainer,
@@ -13,7 +13,7 @@ import LogOut from "./Components/LogOut";
 
 class App extends Component {
   render() {
-    return <MyApp />;
+    return <Application />;
   }
 }
 
@@ -21,7 +21,7 @@ const AppStack = createDrawerNavigator({
   Home: {
     screen: Home,
   },
-  Waiting: {
+  UserValidator: {
     screen: LogOut,
     navigationOptions: ({ navigation }) => ({
       title: "LogOut",
@@ -45,10 +45,10 @@ const AuthStack = createStackNavigator({
   initialRouteName: "SignUp",
 });
 
-const MyApp = createAppContainer(
+const Application = createAppContainer(
   createSwitchNavigator(
     {
-      AuthLoading: Waiting,
+      AuthLoading: UserValidator,
       App: AppStack,
       Auth: AuthStack,
     },
@@ -57,4 +57,5 @@ const MyApp = createAppContainer(
     }
   )
 );
+
 export default App;

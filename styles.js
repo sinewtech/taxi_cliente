@@ -9,6 +9,8 @@ export const styles = StyleSheet.create({
     margin: "auto",
     justifyContent: "center",
     alignItems: "center",
+    height: "100%",
+    width: "100%",
   },
 
   container: {
