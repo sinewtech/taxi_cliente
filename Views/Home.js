@@ -709,8 +709,8 @@ export default class Home extends React.Component {
         case FLOW_STATUS_WAITING:
           return <ActivityIndicator size={50} color="#FF9800" style={styles.fullCenter} />;
         case FLOW_STATUS_SUCCESS:
-          return 
-            <CotizarExito destination={this.state.destination.name} onCancel={this.cancelOrder} />;
+          return;
+          <CotizarExito destination={this.state.destination.name} onCancel={this.cancelOrder} />;
         case FLOW_STATUS_CONFIRMING:
           return (
             <CotizarConfirmar
