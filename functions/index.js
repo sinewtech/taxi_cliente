@@ -109,7 +109,7 @@ exports.custom_marker_reference = functions.database
 
 exports.confirm_quote = functions.database
   .ref("quotes/{uid}")
-  .onUpdate((snapshot, context) => {
+  .onUpdate(snapshot => {
     let dataBefore = snapshot.before.exportVal();
     let dataAfter = snapshot.after.exportVal();
 
@@ -152,14 +152,44 @@ exports.confirm_quote = functions.database
           });
         })
         .catch(e => console.error(e));
-    }else if (dataAfter.status == 4) {
-      var updates = {};
-      updates["/quotes/" + context.after.params.uid + "/status"] = 0;
+    }else if (dataAfter.status == 5) {
+      console.log("Notificando llegada");
 
       return admin
-        .database()
-        .ref()
-        .update(updates);
+        .firestore()
+        .collection("clients")
+        .doc(dataAfter.userUID)
+        .get()
+        .then(snap => {
+          let data = snap.data();
+          let pushTokens = data["pushDevices"];
+
+          console.log("PushTokens:", pushTokens);
+
+          let messages = [];
+
+          pushTokens.forEach(token => {
+            messages.push({
+              to: token,
+              sound: "default",
+              body: "Tu taxi está aquí",
+              data: {
+                id: 2,
+              },
+            });
+          });
+
+          fetch("https://exp.host/--/api/v2/push/send", {
+            method: "POST",
+            mode: "no-cors",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json",
+              "Access-Control-Allow-Origin": "*",
+            },
+            body: JSON.stringify(messages),
+          });
+        });
     }
   });
 
