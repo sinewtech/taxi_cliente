@@ -46,25 +46,11 @@ export const styles = StyleSheet.create({
     overflow: "hidden",
   },
 
-  resultViewShown: {
-    /*transform: [
-      {
-        translateY: -(Dimensions.get("window").height * 0.56),
-      },
-    ],*/
-    height: "88%",
-    width: "100%",
-    marginLeft: 0,
-    marginRight: 0,
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: 0,
-  },
-
   searchBar: {
     flex: 8,
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "center", 
     borderRadius: 10,
     marginTop: 10,
     marginRight: 10,

@@ -1,6 +1,7 @@
 import React from "react";
-import { Text, View, StyleSheet } from "react-native";
+import { Text, View, StyleSheet, Alert } from "react-native";
 import LugarFrecuente from "./LugarFrecuente";
+
 export default class Bienvenida extends React.Component {
   render() {
     return (
@@ -9,7 +10,9 @@ export default class Bienvenida extends React.Component {
           <Text style={styles.welcomeText}>{this.props.selectingOrigin ? "¿De dónde partiremos?" : "¿A dónde vamos hoy?"}</Text>
         </View>
         <View style={styles.lugaresFrecuentes}>
-          <LugarFrecuente icon="add" name="Nuevo Lugar Frecuente" />
+          <LugarFrecuente icon="add" name="Nuevo Lugar Frecuente" onPress={() =>{
+            Alert.alert("Lugares Frecuentes", "Esta función pronto estará implementada.");
+          }}/>
         </View>
       </View>
     );
