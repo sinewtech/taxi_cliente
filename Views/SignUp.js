@@ -1,7 +1,9 @@
 import React, { Component } from "react";
 import { StyleSheet, Dimensions, Alert, View } from "react-native";
 import { Input, Button, Icon } from "react-native-elements";
+import Waiting from "../Components/Waiting";
 import firebase from "firebase";
+
 class SignUp extends Component {
   constructor() {
     super();
@@ -10,54 +12,70 @@ class SignUp extends Component {
       password: "",
       phone: "",
       name: "",
+      Registrando: false,
     };
   }
-  handleRegister = () => {
-    let CanContinue = true;
-    for (key in this.state) {
-      if (this.state[key].length === 0) {
-        CanContinue = false;
-        break;
+  handleRegister = async () => {
+    await this.setState({ Registrando: true });
+    if (this.state.Registrando) {
+      let CanContinue = true;
+      for (key in this.state) {
+        if (this.state[key].length === 0) {
+          CanContinue = false;
+          break;
+        }
       }
-    }
-    if (!CanContinue) {
-      Alert.alert("Error", "Por favor Ingrese sus datos");
-      return;
-    } else {
-      if (!/^((?!\.)[\w-_.]*[^.])(@\w+)(\.\w+(\.\w+)?[^.\W])$/.test(this.state.mail)) {
-        Alert.alert("Correo", "Por favor use un formato de correo valido.");
+      if (!CanContinue) {
+        Alert.alert("Error", "Por favor Ingrese sus datos");
+        this.setState({ Registrando: false });
         return;
+      } else {
+        if (!/^((?!\.)[\w-_.]*[^.])(@\w+)(\.\w+(\.\w+)?[^.\W])$/.test(this.state.mail)) {
+          Alert.alert("Correo", "Por favor use un formato de correo valido.");
+          this.setState({ Registrando: false });
+          return;
+        }
+        if (!/^[A-Za-z0-9]{6,}$/.test(this.state.password)) {
+          Alert.alert("Contraseña", "Por favor que la contraseña sea mayor a 6 caracteres.");
+          this.setState({ Registrando: false });
+          return;
+        }
+        if (!/^\+504\ \d{4}-\d{4}$/.test(this.state.phone)) {
+          Alert.alert("Numero de telefono", "Por favor use el formato indicado.");
+          this.setState({ Registrando: false });
+          return;
+        }
+        firebase
+          .auth()
+          .createUserWithEmailAndPassword(this.state.mail, this.state.password)
+          .then(async data => {
+            await firebase
+              .firestore()
+              .collection("clients")
+              .doc(data.user.uid)
+              .set({ mail: this.state.mail, name: this.state.name });
+          })
+          .catch(error => {
+            switch (error.code) {
+              case "auth/email-already-in-use": {
+                Alert.alert("Error", "Alguien ya se registro con este correo");
+                break;
+              }
+            }
+            this.setState({ Registrando: false });
+          });
       }
-      if (!/^[A-Za-z0-9]{6,}$/.test(this.state.password)) {
-        Alert.alert("Contraseña", "Por favor que la contraseña sea mayor a 6 caracteres.");
-        return;
-      }
-      if (!/^\+504\ \d{4}-\d{4}$/.test(this.state.phone)) {
-        Alert.alert("Numero de telefono", "Por favor use el formato indicado.");
-        return;
-      }
-      firebase
-        .auth()
-        .createUserWithEmailAndPassword(this.state.mail, this.state.password)
-        .then(async data => {
-          await firebase
-            .firestore()
-            .collection("clients")
-            .doc(data.user.uid)
-            .set({ mail: this.state.mail, name: this.state.name });
-        })
-        .catch(error => {
-          console.error(error);
-          Alert.alert(error);
-        });
     }
   };
   render() {
+    if (this.state.Registrando) {
+      return <Waiting />;
+    }
     return (
       <View style={styles.SignUpView}>
         <View style={styles.credentialsView}>
           <Input
-            placeholder="Email"
+            placeholder="Correo Electronico"
             leftIcon={<Icon name="mail" size={24} color="black" style={styles.Icon} />}
             inputContainerStyle={styles.Input}
             leftIconContainerStyle={{ marginRight: 15 }}
@@ -71,7 +89,7 @@ class SignUp extends Component {
             leftIcon={<Icon name="person" size={24} color="black" style={styles.Icon} />}
             inputContainerStyle={styles.Input}
             leftIconContainerStyle={{ marginRight: 15 }}
-            autoCapitalize="none"
+            autoCapitalize="words"
             onChangeText={text => this.setState({ name: text })}
           />
           <Input

@@ -5,6 +5,7 @@ import Waiting from "./Waiting";
 
 class UserValidator extends Component {
   componentDidMount() {
+    console.log("estoy validando");
     firebase.auth().onAuthStateChanged(user => {
       if (user) {
         firebase
@@ -16,6 +17,9 @@ class UserValidator extends Component {
             if (snap.exists) {
               console.log("Usuario encontrado, pasando a Home.");
               this.props.navigation.navigate("App");
+            } else {
+              firebase.auth().signOut();
+              this.props.navigation.navigate("Auth");
             }
           });
       } else {
@@ -25,9 +29,7 @@ class UserValidator extends Component {
   }
 
   render() {
-    return (
-      <Waiting/>
-    );
+    return <Waiting />;
   }
 }
 
