@@ -1,18 +1,36 @@
 import React, { Component } from "react";
-import { Text, View, StyleSheet } from "react-native";
+import { Text, View, StyleSheet, TouchableNativeFeedback, TouchableOpacity } from "react-native";
 import { Icon, Button } from "react-native-elements";
 import Ripple from "react-native-material-ripple";
 
 class LugarFrecuente extends Component {
   render() {
-    return (
-      <View style={styles.frecuenteView}>
-        <Ripple style={styles.frecuenteRipple}>
-          <Icon name={this.props.icon} style={styles.frecuenteIcon} size={45} color={"#FF9800"} />
-          <Text style={styles.frecuenteText}>{this.props.name}</Text>
-        </Ripple>
-      </View>
-    );
+    if (Platform.OS === "ios")
+      return (
+        <TouchableHightlight
+          onPress={this.props.onPress}>
+          <View style={styles.frecuenteView}>
+            <Icon
+              name={this.props.icon}
+              style={styles.frecuenteIcon}
+              size={45}
+              color={"#FF9800"}
+            />
+            <Text style={styles.frecuenteText}>{this.props.name}</Text>
+          </View>
+        </TouchableHightlight>
+      );
+    else
+      return (
+        <TouchableNativeFeedback
+          onPress={this.props.onPress}
+          background={TouchableNativeFeedback.SelectableBackground()}>
+          <View style={styles.frecuenteView}>
+            <Icon name={this.props.icon} style={styles.frecuenteIcon} size={45} color={"#FF9800"} />
+            <Text style={styles.frecuenteText}>{this.props.name}</Text>
+          </View>
+        </TouchableNativeFeedback>
+      );
   }
 }
 const styles = StyleSheet.create({
@@ -29,12 +47,7 @@ const styles = StyleSheet.create({
     width: 100,
     borderRadius: 500,
     overflow: "hidden",
-  },
-
-  frecuenteRipple: {
-    height: "100%",
-    width: "100%",
-    alignItems: "center",
+    lignItems: "center",
     justifyContent: "center",
   },
 
