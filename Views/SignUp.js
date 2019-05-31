@@ -53,7 +53,7 @@ class SignUp extends Component {
               .firestore()
               .collection("clients")
               .doc(data.user.uid)
-              .set({ mail: this.state.mail, name: this.state.name });
+              .set({ mail: this.state.mail, name: this.state.name, phone: this.state.phone });
           })
           .catch(error => {
             switch (error.code) {
