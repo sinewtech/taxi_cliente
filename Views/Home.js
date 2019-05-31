@@ -169,7 +169,8 @@ export default class Home extends React.Component {
 
           responseJson.results.map(candidate => {
             cont++;
-            candidate.persist();
+            //candidate.persist();
+
             markers.push(
               <MapView.Marker
                 key={cont}
@@ -341,8 +342,8 @@ export default class Home extends React.Component {
             longitude: responseJson.result.geometry.location.lng,
             // latitudeDelta: responseJson.result.geometry.viewport.southwest.lat,
             // longitudeDelta: responseJson.result.geometry.viewport.southwest.lng
-            latitudeDelta: 0.02,
-            longitudeDelta: 0.02,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
           };
 
           this.map.animateToRegion(coords, 500);
