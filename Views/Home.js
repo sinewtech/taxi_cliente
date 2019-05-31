@@ -524,6 +524,8 @@ export default class Home extends React.Component {
       flowStatus: FLOW_STATUS_NONE,
       selectingLocation: "origin",
       usingGps: false,
+      busqueda: "",
+      lugares: []
     });
   };
 
@@ -709,8 +711,9 @@ export default class Home extends React.Component {
         case FLOW_STATUS_WAITING:
           return <ActivityIndicator size={50} color="#FF9800" style={styles.fullCenter} />;
         case FLOW_STATUS_SUCCESS:
-          return;
-          <CotizarExito destination={this.state.destination.name} onCancel={this.cancelOrder} />;
+          return (
+            <CotizarExito destination={this.state.destination.name} onCancel={this.cancelOrder} />
+          );
         case FLOW_STATUS_CONFIRMING:
           return (
             <CotizarConfirmar
@@ -727,7 +730,7 @@ export default class Home extends React.Component {
         default:
           break;
       }
-    } else if (this.state.busqueda == "") {
+    } else if (this.state.busqueda === "") {
       return this.state.active ? (
         <Recientes />
       ) : (
