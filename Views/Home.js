@@ -76,11 +76,11 @@ async function registerForPushNotificationsAsync() {
     return null;
   }
   if (Platform.OS === "android") {
-    Expo.Notifications.createChannelAndroidAsync("Cotizacion", {
-      name: "cotizacion",
-      sound: true,
-      vibrate: [0, 250, 250, 250],
+    Expo.Notifications.createChannelAndroidAsync("cotizacion", {
+      name: "Cotizacion",
       priority: "max",
+      vibrate: [0, 250, 250, 250],
+      sound: true,
     });
   }
   let token = "_";
@@ -445,7 +445,7 @@ export default class Home extends React.Component {
   };
 
   _handleNotification = notification => {
-    Notifications.dismissAllNotificationsAsync();
+    // Notifications.dismissAllNotificationsAsync();
     if (notification.data.id == 1) {
       console.log("Quote recibida: ", notification);
       this.setState({
