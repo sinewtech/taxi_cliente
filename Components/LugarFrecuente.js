@@ -1,5 +1,12 @@
 import React, { Component } from "react";
-import { Text, View, StyleSheet, TouchableNativeFeedback, TouchableOpacity } from "react-native";
+import {
+  Text,
+  View,
+  StyleSheet,
+  TouchableNativeFeedback,
+  Platform,
+  TouchableOpacity,
+} from "react-native";
 import { Icon, Button } from "react-native-elements";
 import Ripple from "react-native-material-ripple";
 
@@ -7,15 +14,9 @@ class LugarFrecuente extends Component {
   render() {
     if (Platform.OS === "ios")
       return (
-        <TouchableHightlight
-          onPress={this.props.onPress}>
+        <TouchableHightlight onPress={this.props.onPress}>
           <View style={styles.frecuenteView}>
-            <Icon
-              name={this.props.icon}
-              style={styles.frecuenteIcon}
-              size={45}
-              color={"#FF9800"}
-            />
+            <Icon name={this.props.icon} style={styles.frecuenteIcon} size={45} color={"#FF9800"} />
             <Text style={styles.frecuenteText}>{this.props.name}</Text>
           </View>
         </TouchableHightlight>
@@ -47,7 +48,7 @@ const styles = StyleSheet.create({
     width: 100,
     borderRadius: 500,
     overflow: "hidden",
-    lignItems: "center",
+    alignItems: "center",
     justifyContent: "center",
   },
 

@@ -13,6 +13,7 @@ import {
   Keyboard,
   BackHandler,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 
 import { MapView, Constants, Location, Permissions, Notifications } from "expo";
@@ -74,7 +75,14 @@ async function registerForPushNotificationsAsync() {
   if (finalStatus !== "granted") {
     return null;
   }
-
+  if (Platform.OS === "android") {
+    Expo.Notifications.createChannelAndroidAsync("cotizacion", {
+      name: "Cotizacion",
+      priority: "max",
+      vibrate: [0, 250, 250, 250],
+      sound: true,
+    });
+  }
   let token = "_";
 
   try {
@@ -231,6 +239,7 @@ export default class Home extends React.Component {
 
   componentDidMount = async () => {
     let { status } = await Permissions.askAsync(Permissions.LOCATION);
+
     if (status !== "granted") {
       Alert.alert("Servicios GPS", "Por favor deje que el app pueda trabajar con el gps");
     }
@@ -436,6 +445,7 @@ export default class Home extends React.Component {
   };
 
   _handleNotification = notification => {
+    // Notifications.dismissAllNotificationsAsync();
     if (notification.data.id == 1) {
       console.log("Quote recibida: ", notification);
       this.setState({
@@ -473,10 +483,6 @@ export default class Home extends React.Component {
           console.log("Status failed");
         }
       });
-  }
-
-  componentWillUnmount() {
-    clearInterval(this.locationInterval);
   }
 
   onChangeDestiny(busqueda) {
@@ -537,8 +543,11 @@ export default class Home extends React.Component {
         text: "Cancelar Carrera",
         onPress: () => {
           this.clear();
-          if (this.state.currentOrder){
-            firebase.database().ref("/quotes/" + this.state.currentOrder + "/status").set(-1);
+          if (this.state.currentOrder) {
+            firebase
+              .database()
+              .ref("/quotes/" + this.state.currentOrder + "/status")
+              .set(-1);
           }
         },
         style: "cancel",
@@ -700,8 +709,8 @@ export default class Home extends React.Component {
         case FLOW_STATUS_WAITING:
           return <ActivityIndicator size={50} color="#FF9800" style={styles.fullCenter} />;
         case FLOW_STATUS_SUCCESS:
-          return 
-            <CotizarExito destination={this.state.destination.name} onCancel={this.cancelOrder} />;
+          return;
+          <CotizarExito destination={this.state.destination.name} onCancel={this.cancelOrder} />;
         case FLOW_STATUS_CONFIRMING:
           return (
             <CotizarConfirmar
