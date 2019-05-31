@@ -137,6 +137,7 @@ exports.confirm_quote = functions.database
               data: {
                 id: 3,
               },
+              channelId: "carreras",
             });
           });          
           
