@@ -157,7 +157,7 @@ export default class Home extends React.Component {
         API_KEY +
         "&query=" +
         query +
-        "&location=14.0723,-87.1921&radius=30000"
+        "&location=14.0723,-87.1921&radius=20000"
     )
       .then(response => response.json())
       .then(responseJson => {
@@ -260,7 +260,7 @@ export default class Home extends React.Component {
         API_KEY +
         "&input=" +
         query +
-        "&components=country:hn&location=14.0723,-87.1921&radius=30000"
+        "&components=country:hn&location=14.0723,-87.1921&radius=20000&strictbounds"
     )
       .then(response => response.json())
       .then(responseJson => {
@@ -618,17 +618,10 @@ export default class Home extends React.Component {
 
       data = {
         userUID: this.state.userUID,
-        origin: {
-          name: this.state.origin.name,
-          address: this.state.origin.address
-            ? this.state.origin.address
-            : "Adquiriendo punto de referencia...",
-          lat: this.state.origin.lat,
-          lng: this.state.origin.lng,
-        },
+        origin: this.state.origin,
         destination: this.state.destination,
         status: QUOTE_STATUS_PENDING,
-        usingGps: this.state.origin.address ? this.state.usingGps : true,
+        usingGps: false,
       };
 
       console.log("Enviando orden", data);
@@ -681,8 +674,13 @@ export default class Home extends React.Component {
             active: false,
             markers: [],
             polyline: [],
-            destination: { name: this.state.busqueda },
           });
+
+          if (this.state.selectingLocation === "origin") {
+            this.setState({ origin: { name: this.state.busqueda } });            
+          }else{
+            this.setState({ destination: { name: this.state.busqueda } });
+          }
           Keyboard.dismiss();
         }}>
         <View flex={5}>
