@@ -113,7 +113,6 @@ exports.confirm_quote = functions.database.ref("quotes/{uid}").onUpdate(snapshot
 
   if (dataAfter.status == 2 && dataBefore.status != 2) {
     console.log("Nueva orden confirmada");
-
     return admin
       .firestore()
       .collection("drivers")
@@ -135,6 +134,7 @@ exports.confirm_quote = functions.database.ref("quotes/{uid}").onUpdate(snapshot
             data: {
               id: 3,
             },
+            channelId: "carreras",
           });
         });
 

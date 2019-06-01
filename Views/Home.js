@@ -157,7 +157,7 @@ export default class Home extends React.Component {
         API_KEY +
         "&query=" +
         query +
-        "&location=14.0723,-87.1921&radius=30000"
+        "&location=14.0723,-87.1921&radius=20000"
     )
       .then(response => response.json())
       .then(responseJson => {
@@ -169,7 +169,8 @@ export default class Home extends React.Component {
 
           responseJson.results.map(candidate => {
             cont++;
-            candidate.persist();
+            //candidate.persist();
+
             markers.push(
               <MapView.Marker
                 key={cont}
@@ -259,7 +260,7 @@ export default class Home extends React.Component {
         API_KEY +
         "&input=" +
         query +
-        "&components=country:hn&location=14.0723,-87.1921&radius=30000"
+        "&components=country:hn&location=14.0723,-87.1921&radius=20000&strictbounds"
     )
       .then(response => response.json())
       .then(responseJson => {
@@ -341,8 +342,8 @@ export default class Home extends React.Component {
             longitude: responseJson.result.geometry.location.lng,
             // latitudeDelta: responseJson.result.geometry.viewport.southwest.lat,
             // longitudeDelta: responseJson.result.geometry.viewport.southwest.lng
-            latitudeDelta: 0.02,
-            longitudeDelta: 0.02,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
           };
 
           this.map.animateToRegion(coords, 500);
@@ -524,6 +525,8 @@ export default class Home extends React.Component {
       flowStatus: FLOW_STATUS_NONE,
       selectingLocation: "origin",
       usingGps: false,
+      busqueda: "",
+      lugares: []
     });
   };
 
@@ -615,17 +618,10 @@ export default class Home extends React.Component {
 
       data = {
         userUID: this.state.userUID,
-        origin: {
-          name: this.state.origin.name,
-          address: this.state.origin.address
-            ? this.state.origin.address
-            : "Adquiriendo punto de referencia...",
-          lat: this.state.origin.lat,
-          lng: this.state.origin.lng,
-        },
+        origin: this.state.origin,
         destination: this.state.destination,
         status: QUOTE_STATUS_PENDING,
-        usingGps: this.state.origin.address ? this.state.usingGps : true,
+        usingGps: false,
       };
 
       console.log("Enviando orden", data);
@@ -678,8 +674,13 @@ export default class Home extends React.Component {
             active: false,
             markers: [],
             polyline: [],
-            destination: { name: this.state.busqueda },
           });
+
+          if (this.state.selectingLocation === "origin") {
+            this.setState({ origin: { name: this.state.busqueda } });            
+          }else{
+            this.setState({ destination: { name: this.state.busqueda } });
+          }
           Keyboard.dismiss();
         }}>
         <View flex={5}>
@@ -709,8 +710,9 @@ export default class Home extends React.Component {
         case FLOW_STATUS_WAITING:
           return <ActivityIndicator size={50} color="#FF9800" style={styles.fullCenter} />;
         case FLOW_STATUS_SUCCESS:
-          return;
-          <CotizarExito destination={this.state.destination.name} onCancel={this.cancelOrder} />;
+          return (
+            <CotizarExito destination={this.state.destination.name} onCancel={this.cancelOrder} />
+          );
         case FLOW_STATUS_CONFIRMING:
           return (
             <CotizarConfirmar
@@ -727,7 +729,7 @@ export default class Home extends React.Component {
         default:
           break;
       }
-    } else if (this.state.busqueda == "") {
+    } else if (this.state.busqueda === "") {
       return this.state.active ? (
         <Recientes />
       ) : (

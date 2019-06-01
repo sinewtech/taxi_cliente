@@ -58,7 +58,7 @@ class SignUp extends Component {
           .catch(error => {
             switch (error.code) {
               case "auth/email-already-in-use": {
-                Alert.alert("Error", "Alguien ya se registro con este correo");
+                Alert.alert("Error", "Ya existe una cuenta con el correo proporcionado.");
                 break;
               }
             }

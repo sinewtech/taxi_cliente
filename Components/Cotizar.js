@@ -129,6 +129,7 @@ export class CotizarAceptar extends React.Component {
         <View flex={2}>
           <Icon name="check-circle" size={70} color="#4CAF50" />
         </View>
+        <Text flex={1}>¡Éxito!</Text>
         <Text style={styles.displayTitle} flex={1}>
           Tu unidad ya va en camino.
         </Text>
