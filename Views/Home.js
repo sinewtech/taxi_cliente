@@ -82,6 +82,12 @@ async function registerForPushNotificationsAsync() {
       vibrate: [0, 250, 250, 250],
       sound: true,
     });
+    Expo.Notifications.createChannelAndroidAsync("ads", {
+      name: "Ads",
+      priority: "max",
+      vibrate: [0, 250, 250, 250],
+      sound: true,
+    });
   }
   let token = "_";
 
@@ -526,7 +532,7 @@ export default class Home extends React.Component {
       selectingLocation: "origin",
       usingGps: false,
       busqueda: "",
-      lugares: []
+      lugares: [],
     });
   };
 
@@ -677,8 +683,8 @@ export default class Home extends React.Component {
           });
 
           if (this.state.selectingLocation === "origin") {
-            this.setState({ origin: { name: this.state.busqueda } });            
-          }else{
+            this.setState({ origin: { name: this.state.busqueda } });
+          } else {
             this.setState({ destination: { name: this.state.busqueda } });
           }
           Keyboard.dismiss();
