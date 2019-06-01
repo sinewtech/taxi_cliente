@@ -330,7 +330,7 @@ exports.download_url_generator = functions.storage.object().onFinalize(object =>
   });
 });
 
-exports.masive_notifications = functions.firestore
+exports.massive_notifications = functions.firestore
   .document("Ads/{uid}")
   .onCreate((snapshot, context) => {
     let data = snapshot.data();
