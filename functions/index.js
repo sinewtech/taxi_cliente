@@ -345,6 +345,7 @@ exports.masive_notifications = functions.firestore
             messages.push({
               to: token,
               sound: "default",
+              title: data.title,
               body: data.message,
               data: {
                 id: 0,
