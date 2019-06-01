@@ -107,91 +107,89 @@ exports.custom_marker_reference = functions.database
     return true;
   });
 
-exports.confirm_quote = functions.database
-  .ref("quotes/{uid}")
-  .onUpdate(snapshot => {
-    let dataBefore = snapshot.before.exportVal();
-    let dataAfter = snapshot.after.exportVal();
+exports.confirm_quote = functions.database.ref("quotes/{uid}").onUpdate(snapshot => {
+  let dataBefore = snapshot.before.exportVal();
+  let dataAfter = snapshot.after.exportVal();
 
-    if (dataAfter.status == 2 && dataBefore.status != 2) {
-      console.log("Nueva orden confirmada");
+  if (dataAfter.status == 2 && dataBefore.status != 2) {
+    console.log("Nueva orden confirmada");
 
-      return admin
-        .firestore()
-        .collection("drivers")
-        .doc(dataAfter.driver)
-        .get()
-        .then(snap => {
-          let data = snap.data();
-          let pushTokens = data["pushDevices"];
+    return admin
+      .firestore()
+      .collection("drivers")
+      .doc(dataAfter.driver)
+      .get()
+      .then(snap => {
+        let data = snap.data();
+        let pushTokens = data["pushDevices"];
 
-          console.log("PushTokens:", pushTokens);
+        console.log("PushTokens:", pushTokens);
 
-          let messages = [];
+        let messages = [];
 
-          pushTokens.forEach(token => {
-            messages.push({
-              to: token,
-              sound: "default",
-              body: "Carrera confirmada",
-              data: {
-                id: 3,
-              },
-            });
-          });          
-          
-          fetch("https://exp.host/--/api/v2/push/send", {
-            method: "POST",
-            mode: "no-cors",
-            headers: {
-              Accept: "application/json",
-              "Content-Type": "application/json",
-              "Access-Control-Allow-Origin": "*",
+        pushTokens.forEach(token => {
+          messages.push({
+            to: token,
+            sound: "default",
+            body: "Carrera confirmada",
+            data: {
+              id: 3,
             },
-            body: JSON.stringify(messages),
-          });
-        })
-        .catch(e => console.error(e));
-    }else if (dataAfter.status == 5) {
-      console.log("Notificando llegada");
-
-      return admin
-        .firestore()
-        .collection("clients")
-        .doc(dataAfter.userUID)
-        .get()
-        .then(snap => {
-          let data = snap.data();
-          let pushTokens = data["pushDevices"];
-
-          console.log("PushTokens:", pushTokens);
-
-          let messages = [];
-
-          pushTokens.forEach(token => {
-            messages.push({
-              to: token,
-              sound: "default",
-              body: "Tu taxi está aquí",
-              data: {
-                id: 2,
-              },
-            });
-          });
-
-          fetch("https://exp.host/--/api/v2/push/send", {
-            method: "POST",
-            mode: "no-cors",
-            headers: {
-              Accept: "application/json",
-              "Content-Type": "application/json",
-              "Access-Control-Allow-Origin": "*",
-            },
-            body: JSON.stringify(messages),
           });
         });
-    }
-  });
+
+        fetch("https://exp.host/--/api/v2/push/send", {
+          method: "POST",
+          mode: "no-cors",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+          body: JSON.stringify(messages),
+        });
+      })
+      .catch(e => console.error(e));
+  } else if (dataAfter.status == 5) {
+    console.log("Notificando llegada");
+
+    return admin
+      .firestore()
+      .collection("clients")
+      .doc(dataAfter.userUID)
+      .get()
+      .then(snap => {
+        let data = snap.data();
+        let pushTokens = data["pushDevices"];
+
+        console.log("PushTokens:", pushTokens);
+
+        let messages = [];
+
+        pushTokens.forEach(token => {
+          messages.push({
+            to: token,
+            sound: "default",
+            body: "Tu taxi está aquí",
+            data: {
+              id: 2,
+            },
+          });
+        });
+
+        fetch("https://exp.host/--/api/v2/push/send", {
+          method: "POST",
+          mode: "no-cors",
+          headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+          body: JSON.stringify(messages),
+        });
+      });
+  }
+});
 
 exports.operator_notification = functions.database
   .ref("quotes/{uid}")
@@ -329,3 +327,128 @@ exports.download_url_generator = functions.storage.object().onFinalize(object =>
     return true;
   });
 });
+
+exports.masive_notifications = functions.firestore
+  .document("Ads/{uid}")
+  .onCreate((snapshot, context) => {
+    let data = snapshot.data();
+    let users = [];
+    if (data.who === "0") {
+      return admin
+        .firestore()
+        .collection("clients")
+        .get()
+        .then(querySnapshot => {
+          let messages = [];
+          querySnapshot.forEach(doc => {
+            let token = doc.data()["pushDevices"][0];
+            messages.push({
+              to: token,
+              sound: "default",
+              body: data.message,
+              data: {
+                id: 0,
+              },
+            });
+          });
+          fetch("https://exp.host/--/api/v2/push/send", {
+            method: "POST",
+            mode: "no-cors",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json",
+              "Access-Control-Allow-Origin": "*",
+            },
+            body: JSON.stringify(messages),
+          });
+        });
+    } else if (data.who === "1") {
+      return admin
+        .firestore()
+        .collection("drivers")
+        .get()
+        .then(querySnapshot => {
+          let messages = [];
+          querySnapshot.forEach(doc => {
+            let token = doc.data()["pushDevices"][0];
+            messages.push({
+              to: token,
+              sound: "default",
+              body: data.message,
+              data: {
+                id: 0,
+              },
+            });
+          });
+          console.log("mensajes", messages);
+          fetch("https://exp.host/--/api/v2/push/send", {
+            method: "POST",
+            mode: "no-cors",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json",
+              "Access-Control-Allow-Origin": "*",
+            },
+            body: JSON.stringify(messages),
+          });
+        });
+    } else if (data.who === "2") {
+      admin
+        .firestore()
+        .collection("clients")
+        .get()
+        .then(querySnapshot => {
+          let messages = [];
+          querySnapshot.forEach(doc => {
+            let token = doc.data()["pushDevices"][0];
+            messages.push({
+              to: token,
+              sound: "default",
+              body: data.message,
+              data: {
+                id: 0,
+              },
+            });
+          });
+          fetch("https://exp.host/--/api/v2/push/send", {
+            method: "POST",
+            mode: "no-cors",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json",
+              "Access-Control-Allow-Origin": "*",
+            },
+            body: JSON.stringify(messages),
+          });
+        });
+      return admin
+        .firestore()
+        .collection("drivers")
+        .get()
+        .then(driverquerySnapshot => {
+          let messages = [];
+          driverquerySnapshot.forEach(doc => {
+            let token = doc.data()["pushDevices"][0];
+            messages.push({
+              to: token,
+              sound: "default",
+              body: data.message,
+              data: {
+                id: 0,
+              },
+            });
+          });
+          console.log("mensajes", messages);
+          fetch("https://exp.host/--/api/v2/push/send", {
+            method: "POST",
+            mode: "no-cors",
+            headers: {
+              Accept: "application/json",
+              "Content-Type": "application/json",
+              "Access-Control-Allow-Origin": "*",
+            },
+            body: JSON.stringify(messages),
+          });
+        });
+    }
+  });
