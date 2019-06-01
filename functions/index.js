@@ -349,6 +349,8 @@ exports.masive_notifications = functions.firestore
               sound: "default",
               title: data.title,
               body: data.message,
+              channelId: "ads",
+              priority: "high",
               data: {
                 id: 0,
               },
@@ -379,6 +381,8 @@ exports.masive_notifications = functions.firestore
               sound: "default",
               title: data.title,
               body: data.message,
+              channelId: "ads",
+              priority: "high",
               data: {
                 id: 0,
               },
@@ -410,6 +414,8 @@ exports.masive_notifications = functions.firestore
               sound: "default",
               title: data.title,
               body: data.message,
+              channelId: "ads",
+              priority: "high",
               data: {
                 id: 0,
               },
@@ -439,6 +445,8 @@ exports.masive_notifications = functions.firestore
               sound: "default",
               title: data.title,
               body: data.message,
+              channelId: "ads",
+              priority: "high",
               data: {
                 id: 0,
               },
