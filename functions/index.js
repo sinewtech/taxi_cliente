@@ -193,7 +193,7 @@ exports.confirm_quote = functions.database.ref("quotes/{uid}").onUpdate(snapshot
   }
 });
 
-exports.operator_notification = functions.database
+exports.find_reference = functions.database
   .ref("quotes/{uid}")
   .onCreate((snapshot, context) => {
     let data = snapshot.exportVal();
@@ -266,6 +266,12 @@ exports.operator_notification = functions.database
           return false;
         });
     }
+  });
+
+exports.operator_notification = functions.database
+  .ref("quotes/{uid}")
+  .onCreate((snapshot) => {
+    let data = snapshot.exportVal();
 
     admin
       .database()
@@ -274,8 +280,8 @@ exports.operator_notification = functions.database
       .once("value", snap => {
         var message = {
           data: {
-            title: "Nuevo Pedido",
-            body: "Alguien ocupa un precio",
+            title: "Nueva orden recibida",
+            body: "De " + data.origin.name + " a " + data.destination.name,
           },
           token: snap.exportVal().token,
         };
@@ -332,9 +338,9 @@ exports.download_url_generator = functions.storage.object().onFinalize(object =>
 
 exports.massive_notifications = functions.firestore
   .document("Ads/{uid}")
-  .onCreate((snapshot, context) => {
+  .onCreate(snapshot => {
     let data = snapshot.data();
-    let users = [];
+
     if (data.who === "0") {
       return admin
         .firestore()
