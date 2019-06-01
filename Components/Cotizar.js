@@ -87,7 +87,7 @@ export class CotizarConfirmar extends React.Component {
         </View>
         <Text flex={1}>Precio a {this.props.destination}</Text>
         <Text style={styles.displayTitle} flex={1}>
-          L. {this.props.price}
+          L. {this.props.price.toFixed(2)}
         </Text>
         <View style={styles.buttonRow} flex={1}>
           <BottomButton

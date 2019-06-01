@@ -130,7 +130,8 @@ exports.confirm_quote = functions.database.ref("quotes/{uid}").onUpdate(snapshot
           messages.push({
             to: token,
             sound: "default",
-            body: "Carrera confirmada",
+            title: "Carrera confirmada",
+            body: "El cliente ha aceptado el precio. Por favor comienza tu desplazamiento.",
             data: {
               id: 3,
             },
@@ -170,7 +171,8 @@ exports.confirm_quote = functions.database.ref("quotes/{uid}").onUpdate(snapshot
           messages.push({
             to: token,
             sound: "default",
-            body: "Tu taxi está aquí",
+            title: "Tu taxi está aquí",
+            body: "Fulano te espera en un Honda Civic rojo, placa ABC 1234",
             data: {
               id: 2,
             },
@@ -345,6 +347,7 @@ exports.masive_notifications = functions.firestore
             messages.push({
               to: token,
               sound: "default",
+              title: data.title,
               body: data.message,
               data: {
                 id: 0,
@@ -374,6 +377,7 @@ exports.masive_notifications = functions.firestore
             messages.push({
               to: token,
               sound: "default",
+              title: data.title,
               body: data.message,
               data: {
                 id: 0,
@@ -404,6 +408,7 @@ exports.masive_notifications = functions.firestore
             messages.push({
               to: token,
               sound: "default",
+              title: data.title,
               body: data.message,
               data: {
                 id: 0,
@@ -432,6 +437,7 @@ exports.masive_notifications = functions.firestore
             messages.push({
               to: token,
               sound: "default",
+              title: data.title,
               body: data.message,
               data: {
                 id: 0,
