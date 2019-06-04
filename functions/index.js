@@ -151,7 +151,7 @@ exports.confirm_quote = functions.database.ref("quotes/{uid}").onUpdate(snapshot
         });
       })
       .catch(e => console.error(e));
-  } else if (dataAfter.status == 5) {
+  } else if (dataAfter.status === 5) {
     console.log("Notificando llegada");
 
     return admin
