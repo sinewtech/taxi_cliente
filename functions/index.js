@@ -2,12 +2,11 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const express = require("express");
 const fetch = require("node-fetch");
-admin.initializeApp();
-const location = express();
-var bodyParser = require("body-parser");
-
 const API_KEY = "AIzaSyApNgtxFBp0SXSHljP_xku6peNCzjTFWM4";
 const REFERENCE_RADIUS = 100;
+const location = express();
+var bodyParser = require("body-parser");
+admin.initializeApp();
 
 location.use(bodyParser());
 location.use(bodyParser.urlencoded({ extended: true }));
