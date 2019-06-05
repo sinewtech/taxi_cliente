@@ -310,7 +310,7 @@ exports.download_url_generator = functions.storage.object().onFinalize(object =>
   const user = data.pop();
   const options = {
     action: "read",
-    expires: "03-17-2025",
+    expires: "12-31-2420",
   };
   // Get a signed URL for the file
   return file.getSignedUrl(options).then(results => {
