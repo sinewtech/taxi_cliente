@@ -102,9 +102,10 @@ class SignUp extends Component {
             onChangeText={text => this.setState({ password: text })}
           />
           <Input
-            placeholder="Numero de telefono +504 xxxx-xxxx"
+            placeholder="Numero de telefono"
             leftIcon={<Icon name="phone" size={24} color="black" style={styles.Icon} />}
             keyboardType="phone-pad"
+            textContentType="telephoneNumber"
             inputContainerStyle={styles.Input}
             leftIconContainerStyle={{ marginRight: 15 }}
             autoCapitalize="none"

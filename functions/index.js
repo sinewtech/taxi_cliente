@@ -131,7 +131,7 @@ exports.confirm_quote = functions.database.ref("quotes/{uid}").onUpdate(snapshot
             to: token,
             sound: "default",
             title: "Carrera confirmada",
-            body: "El cliente ha aceptado el precio. Por favor comienza tu desplazamiento.",
+            body: "El cliente ha aceptado el precio propuesto.",
             data: {
               id: 3,
             },
@@ -151,7 +151,7 @@ exports.confirm_quote = functions.database.ref("quotes/{uid}").onUpdate(snapshot
         });
       })
       .catch(e => console.error(e));
-  } else if (dataAfter.status == 5) {
+  } else if (dataAfter.status === 5) {
     console.log("Notificando llegada");
 
     return admin
