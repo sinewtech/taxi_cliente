@@ -165,29 +165,37 @@ exports.confirm_quote = functions.database.ref("quotes/{uid}").onUpdate(snapshot
         console.log("PushTokens:", pushTokens);
 
         let messages = [];
+        admin
+          .firestore()
+          .collection("drivers")
+          .doc(dataAfter.driver)
+          .get()
+          .then(snap => {
+            let driverdata = snap.data();
 
-        pushTokens.forEach(token => {
-          messages.push({
-            to: token,
-            sound: "default",
-            title: "Tu taxi está aquí",
-            body: "Fulano te espera en un Honda Civic rojo, placa ABC 1234",
-            data: {
-              id: 2,
-            },
+            pushTokens.forEach(token => {
+              messages.push({
+                to: token,
+                sound: "default",
+                title: "Tu taxi está aquí",
+                body: driverdata.name + " te espera en un auto con placa " + driverdata.placa,
+                data: {
+                  id: 2,
+                },
+              });
+            });
+
+            fetch("https://exp.host/--/api/v2/push/send", {
+              method: "POST",
+              mode: "no-cors",
+              headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+              },
+              body: JSON.stringify(messages),
+            });
           });
-        });
-
-        fetch("https://exp.host/--/api/v2/push/send", {
-          method: "POST",
-          mode: "no-cors",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-          },
-          body: JSON.stringify(messages),
-        });
       });
   }
 });
