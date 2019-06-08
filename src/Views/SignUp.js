@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import { StyleSheet, Dimensions, Alert, View, KeyboardAvoidingView } from "react-native";
 import { Input, Button, Icon } from "react-native-elements";
 import Waiting from "../Components/Waiting";
-import firebase from "firebase";
+import firebase from "../firebase";
 
 class SignUp extends Component {
   constructor() {

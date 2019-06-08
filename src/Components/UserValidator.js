@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { Alert } from "react-native";
-import firebase from "firebase";
+import firebase from "../firebase";
 
 import Waiting from "./Waiting";
 
@@ -21,10 +21,12 @@ class UserValidator extends Component {
               Alert.alert(
                 "Usuario no encontrado",
                 "No hemos encontrado este usuario en el sistema. Por favor intenta de nuevo.",
-                [{
-                  text: "Ok",
-                }]
-              )
+                [
+                  {
+                    text: "Ok",
+                  },
+                ]
+              );
               firebase.auth().signOut();
               this.props.navigation.navigate("Auth");
             }

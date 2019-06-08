@@ -1,6 +1,5 @@
 import React from "react";
-import firebase from "@firebase/app";
-import "@firebase/firestore";
+import firebase from "../firebase";
 
 import {
   Alert,
@@ -17,9 +16,9 @@ import {
 } from "react-native";
 
 import { Notifications } from "expo";
-import * as Permissions from 'expo-permissions';
-import * as Location from 'expo-location';
-import MapView from 'react-native-maps';
+import * as Permissions from "expo-permissions";
+import * as Location from "expo-location";
+import MapView from "react-native-maps";
 import { Button, Icon } from "react-native-elements";
 import Ripple from "react-native-material-ripple";
 import Waiting from "../Components/Waiting";
@@ -32,7 +31,7 @@ import Cotizar, {
   CotizarAceptar,
 } from "../Components/Cotizar.js";
 
-let masterStyles = require("../styles.js");
+let masterStyles = require("../../styles.js");
 let styles = masterStyles.styles;
 let animatedStyles = masterStyles.animatedStyles;
 
@@ -56,15 +55,6 @@ const INITIAL_REGION = {
   latitudeDelta: 0.1,
   longitudeDelta: 0.1,
 };
-firebase.initializeApp({
-  apiKey: "AIzaSyBkCxRqmYLXkznasnf-MRTROWVJcORIGcw",
-  authDomain: "taxiapp-sinewave.firebaseapp.com",
-  databaseURL: "https://taxiapp-sinewave.firebaseio.com",
-  projectId: "taxiapp-sinewave",
-  storageBucket: "taxiapp-sinewave.appspot.com",
-  messagingSenderId: "503391985374",
-});
-const db = firebase.firestore();
 
 async function registerForPushNotificationsAsync() {
   const { status: existingStatus } = await Permissions.getAsync(Permissions.NOTIFICATIONS);
@@ -400,7 +390,9 @@ export default class Home extends React.Component {
       .then(pushToken => {
         console.log(pushToken);
         if (pushToken) {
-          db.collection("clients")
+          firebase
+            .firestore()
+            .collection("clients")
             .doc(this.state.userUID)
             .get()
             .then(DocumentSnapshot => {
@@ -421,7 +413,9 @@ export default class Home extends React.Component {
                 pushTokens.push(pushToken);
               }
               console.log("celulares", pushTokens);
-              db.collection("clients")
+              firebase
+                .firestore()
+                .collection("clients")
                 .doc(this.state.userUID)
                 .update({
                   pushDevices: pushTokens,

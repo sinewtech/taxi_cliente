@@ -9,7 +9,7 @@ import {
   Alert,
 } from "react-native";
 import { Input, Button, Icon } from "react-native-elements";
-import firebase from "firebase";
+import firebase from "../firebase";
 import Waiting from "../Components/Waiting";
 
 class LogIn extends Component {

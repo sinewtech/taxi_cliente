@@ -1,15 +1,15 @@
 import React, { Component } from "react";
-import Home from "./Views/Home";
-import LogIn from "./Views/LogIn";
-import SignUp from "./Views/SignUp";
-import UserValidator from "./Components/UserValidator";
+import Home from "./src/Views/Home";
+import LogIn from "./src/Views/LogIn";
+import SignUp from "./src/Views/SignUp";
+import UserValidator from "./src/Components/UserValidator";
 import {
   createDrawerNavigator,
   createAppContainer,
   createStackNavigator,
   createSwitchNavigator,
 } from "react-navigation";
-import LogOut from "./Components/LogOut";
+import LogOut from "./src/Components/LogOut";
 
 // Ignorar los warnings de firebase
 
