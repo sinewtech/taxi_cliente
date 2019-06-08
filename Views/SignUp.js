@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { StyleSheet, Dimensions, Alert, View } from "react-native";
+import { StyleSheet, Dimensions, Alert, View, KeyboardAvoidingView } from "react-native";
 import { Input, Button, Icon } from "react-native-elements";
 import Waiting from "../Components/Waiting";
 import firebase from "firebase";
@@ -72,7 +72,7 @@ class SignUp extends Component {
       return <Waiting />;
     }
     return (
-      <View style={styles.SignUpView}>
+      <KeyboardAvoidingView style={styles.SignUpView}>
         <View style={styles.credentialsView}>
           <Input
             placeholder="Correo Electronico"
@@ -115,7 +115,7 @@ class SignUp extends Component {
         <View style={styles.buttonRow}>
           <Button title="Registrate" onPress={this.handleRegister} />
         </View>
-      </View>
+      </KeyboardAvoidingView>
     );
   }
 }

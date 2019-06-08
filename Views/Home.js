@@ -16,7 +16,10 @@ import {
   Platform,
 } from "react-native";
 
-import { MapView, Constants, Location, Permissions, Notifications } from "expo";
+import { Notifications } from "expo";
+import * as Permissions from 'expo-permissions';
+import * as Location from 'expo-location';
+import MapView from 'react-native-maps';
 import { Button, Icon } from "react-native-elements";
 import Ripple from "react-native-material-ripple";
 import Waiting from "../Components/Waiting";
