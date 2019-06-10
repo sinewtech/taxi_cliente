@@ -22,7 +22,12 @@
     "assetBundlePatterns": ["**/*"],
     "android": {
       "package": "tech.sinewave.taxi",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "adaptiveIcon": {
+        "backgroundColor": "#ffc107",
+        "foregroundImage": "./assets/foregroundicon.png"
+      },
+      "icon": "./assets/icon.png"
     },
     "notification": {
       "icon": "./assets/notificationicon.png",

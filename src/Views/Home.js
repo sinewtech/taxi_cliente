@@ -68,14 +68,16 @@ async function registerForPushNotificationsAsync() {
   if (finalStatus !== "granted") {
     return null;
   }
+
   if (Platform.OS === "android") {
-    Expo.Notifications.createChannelAndroidAsync("cotizacion", {
+    Notifications.createChannelAndroidAsync("cotizacion", {
       name: "Cotizacion",
       priority: "max",
       vibrate: [0, 250, 250, 250],
       sound: true,
     });
-    Expo.Notifications.createChannelAndroidAsync("ads", {
+
+    Notifications.createChannelAndroidAsync("ads", {
       name: "Ads",
       priority: "max",
       vibrate: [0, 250, 250, 250],
