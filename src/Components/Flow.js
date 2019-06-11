@@ -6,10 +6,10 @@ import {
   TouchableOpacity,
   Alert,
 } from "react-native";
-import { Icon, Button, Divider } from "react-native-elements";
+import { Icon, Divider } from "react-native-elements";
 import BottomButton from "./BottomButton"
 
-export default class Cotizar extends React.Component {
+export class FlowCotizar extends React.Component {
   render() {
     return (
       <View style={styles.mainViewPaddingless}>
@@ -54,7 +54,7 @@ export default class Cotizar extends React.Component {
   }
 }
 
-export class CotizarExito extends React.Component {
+export class FlowExito extends React.Component {
   render() {
     return (
       <View style={styles.mainViewPaddingless}>
@@ -78,7 +78,7 @@ export class CotizarExito extends React.Component {
   }
 }
 
-export class CotizarConfirmar extends React.Component {
+export class FlowConfirmar extends React.Component {
   render() {
     return (
       <View style={styles.mainViewPaddingless}>
@@ -106,7 +106,7 @@ export class CotizarConfirmar extends React.Component {
   }
 }
 
-export class CotizarError extends React.Component {
+export class FlowError extends React.Component {
   render() {
     return (
       <View style={styles.mainViewPaddingless}>
@@ -122,7 +122,7 @@ export class CotizarError extends React.Component {
   }
 }
 
-export class CotizarAceptar extends React.Component {
+export class FlowAceptar extends React.Component {
   render() {
     return (
       <View style={styles.mainViewPaddingless}>
@@ -141,6 +141,53 @@ export class CotizarAceptar extends React.Component {
           title="Cancelar carrera"
           backgroundColor="#f44336"
         />
+      </View>
+    );
+  }
+}
+
+export class FlowAbordando extends React.Component {
+  render() {
+    return (
+      <View style={styles.mainViewPaddingless}>
+        <Text style={styles.disclaimer} flex={1}>
+          Info del taxi va acá
+        </Text>
+      </View>
+    );
+  }
+}
+
+export class FlowViajando extends React.Component {
+  render() {
+    return (
+      <View style={styles.mainViewPaddingless}>
+        <View flex={2}>
+          <Icon name="check-circle" size={70} color="#4CAF50" />
+        </View>
+        <Text flex={1}>¡Vamos en camino!</Text>
+        <BottomButton
+          onPress={this.props.panic}
+          title="Pánico"
+          backgroundColor="#f44336"
+        />
+      </View>
+    );
+  }
+}
+
+export class FlowTerminado extends React.Component {
+  render() {
+    return (
+      <View style={styles.mainViewPaddingless}>
+        <View flex={2}>
+          <Icon name="check-circle" size={70} color="#4CAF50" />
+        </View>
+        <Text flex={1}>¡Hemos llegado!</Text>
+        <Text style={styles.displayTitle} flex={1}>
+          Gracias por viajar con nosotros.
+        </Text>
+        <BottomButton onPress={this.props.dismiss} title="Cerrar" backgroundColor="#4CAF50" />
       </View>
     );
   }

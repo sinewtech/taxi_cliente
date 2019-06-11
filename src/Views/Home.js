@@ -19,17 +19,21 @@ import { Notifications } from "expo";
 import * as Permissions from "expo-permissions";
 import * as Location from "expo-location";
 import MapView from "react-native-maps";
-import { Button, Icon } from "react-native-elements";
+import { Icon } from "react-native-elements";
 import Ripple from "react-native-material-ripple";
 import Waiting from "../Components/Waiting";
 import Bienvenida from "../Components/Bienvenida.js";
 import Recientes from "../Components/Recientes.js";
-import Cotizar, {
-  CotizarExito,
-  CotizarConfirmar,
-  CotizarError,
-  CotizarAceptar,
-} from "../Components/Cotizar.js";
+import {
+  FlowCotizar,
+  FlowExito,
+  FlowConfirmar,
+  FlowError,
+  FlowAceptar,
+  FlowAbordando,
+  FlowViajando,
+  FlowTerminado,
+} from "../Components/Flow.js";
 
 let masterStyles = require("../../styles.js");
 let styles = masterStyles.styles;
@@ -37,7 +41,7 @@ let animatedStyles = masterStyles.animatedStyles;
 
 const QUOTE_STATUS_PENDING = 0;
 const QUOTE_STATUS_SUCCESS = 1;
-const QUOTE_STATUS_ERROR = 2;
+const QUOTE_STATUS_ERROR = -1;
 
 const FLOW_STATUS_NONE = 0;
 const FLOW_STATUS_WAITING = 1;
@@ -45,7 +49,10 @@ const FLOW_STATUS_SUCCESS = 2;
 const FLOW_STATUS_QUOTING = 3;
 const FLOW_STATUS_CONFIRMING = 4;
 const FLOW_STATUS_CONFIRMED = 5;
-const FLOW_STATUS_ERROR = 6;
+const FLOW_STATUS_BOARDING = 6;
+const FLOW_STATUS_TRAVELLING = 7;
+const FLOW_STATUS_ARRIVED = 8;
+const FLOW_STATUS_ERROR = -1;
 
 const API_KEY = "AIzaSyApNgtxFBp0SXSHljP_xku6peNCzjTFWM4";
 
@@ -452,15 +459,22 @@ export default class Home extends React.Component {
 
   _handleNotification = notification => {
     // Notifications.dismissAllNotificationsAsync();
-    if (notification.data.id == 1) {
-      console.log("Quote recibida: ", notification);
-      this.setState({
-        quote: {
-          mensaje: notification.data.mensaje,
-          precio: notification.data.precio,
-        },
-        flowStatus: FLOW_STATUS_CONFIRMING,
-      });
+    switch (notification.data.id) {
+      case 1: {
+        console.log("Quote recibida: ", notification);
+        this.setState({
+          quote: {
+            mensaje: notification.data.mensaje,
+            precio: notification.data.precio,
+          },
+          flowStatus: FLOW_STATUS_CONFIRMING,
+        });
+
+        break;
+      }
+      case 2: {
+        this.setState({flowStatus: FLOW_STATUS_BOARDING})
+      }
     }
   };
 
@@ -702,7 +716,7 @@ export default class Home extends React.Component {
       switch (this.state.flowStatus) {
         case FLOW_STATUS_QUOTING:
           return (
-            <Cotizar
+            <FlowCotizar
               usingGps={this.state.usingGps}
               origin={this.state.origin.name}
               destination={this.state.destination.name}
@@ -716,11 +730,11 @@ export default class Home extends React.Component {
           return <ActivityIndicator size={50} color="#FF9800" style={styles.fullCenter} />;
         case FLOW_STATUS_SUCCESS:
           return (
-            <CotizarExito destination={this.state.destination.name} onCancel={this.cancelOrder} />
+            <FlowExito destination={this.state.destination.name} onCancel={this.cancelOrder} />
           );
         case FLOW_STATUS_CONFIRMING:
           return (
-            <CotizarConfirmar
+            <FlowConfirmar
               onConfirm={this.handleConfirm}
               onCancel={this.cancelOrder}
               price={this.state.quote.precio}
@@ -728,9 +742,15 @@ export default class Home extends React.Component {
             />
           );
         case FLOW_STATUS_ERROR:
-          return <CotizarError onConfirm={this.clear} />;
+          return <FlowError onConfirm={this.clear} />;
         case FLOW_STATUS_CONFIRMED:
-          return <CotizarAceptar onCancel={this.cancelOrder} />;
+          return <FlowAceptar onCancel={this.cancelOrder} />;
+        case FLOW_STATUS_BOARDING:
+          return <FlowAbordando />;
+        case FLOW_STATUS_TRAVELLING:
+          return <FlowViajando panic={this.cancelOrder} />;
+        case FLOW_STATUS_ARRIVED:
+          return <FlowTerminado dismiss={this.setState({ flowStatus: FLOW_STATUS_NONE })} />;
         default:
           break;
       }
