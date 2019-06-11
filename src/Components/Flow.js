@@ -1,13 +1,10 @@
 import React from "react";
-import {
-  Text,
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  Alert,
-} from "react-native";
+import { Text, View, StyleSheet, TouchableOpacity, Modal, BackHandler } from "react-native";
 import { Icon, Divider } from "react-native-elements";
-import BottomButton from "./BottomButton"
+import BottomButton from "./BottomButton";
+import ImageViewer from "react-native-image-zoom-viewer";
+import firebase from "firebase";
+import "@firebase/firestore";
 
 export class FlowCotizar extends React.Component {
   render() {
@@ -31,18 +28,14 @@ export class FlowCotizar extends React.Component {
                 <Icon style={styles.rutaIcon} name="edit" color="gray" size={12} />
               </TouchableOpacity>
               <Divider style={styles.divider} />
-              <TouchableOpacity
-                style={styles.rutaSelect}
-                onPress={this.props.selectDestination}>
+              <TouchableOpacity style={styles.rutaSelect} onPress={this.props.selectDestination}>
                 <Icon style={styles.selectIcon} name="place" color="gray" size={15} />
                 <Text style={styles.origenText}>{this.props.destination}</Text>
                 <Icon style={styles.rutaIcon} name="edit" color="gray" size={12} />
               </TouchableOpacity>
             </View>
           </View>
-          <Text style={styles.disclaimer}>
-            No se te cobrará nada hasta que aceptes el precio.
-          </Text>
+          <Text style={styles.disclaimer}>No se te cobrará nada hasta que aceptes el precio.</Text>
         </View>
         <BottomButton
           onPress={this.props.onConfirm}
@@ -77,7 +70,6 @@ export class FlowExito extends React.Component {
     );
   }
 }
-
 export class FlowConfirmar extends React.Component {
   render() {
     return (
@@ -147,6 +139,38 @@ export class FlowAceptar extends React.Component {
 }
 
 export class FlowAbordando extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      images: [],
+      visible: false,
+    };
+  }
+  componentDidMount = async () => {
+    await firebase
+      .database()
+      .ref()
+      .child("quotes/" + this.props.order + "/")
+      .once("value", snap => {
+        let data = snap.exportVal();
+        console.log("data", data);
+        firebase
+          .firestore()
+          .collection("drivers")
+          .doc(data.driver)
+          .get()
+          .then(snap => {
+            let driverdata = snap.data();
+            let images = [
+              { url: driverdata.profile },
+              { url: driverdata.lateralcar },
+              { url: driverdata.profilecar },
+            ];
+            this.setState({ images });
+          });
+      });
+  };
+
   render() {
     return (
       <View style={styles.mainViewPaddingless}>
@@ -156,6 +180,22 @@ export class FlowAbordando extends React.Component {
         <Text style={styles.disclaimer} flex={1}>
           Info del taxi va acá
         </Text>
+        <BottomButton
+          onPress={() => {
+            this.setState({ visible: true });
+          }}
+          title="Ver imagenes de mi conductor"
+          backgroundColor="#f44336"
+        />
+        <Modal
+          animationType="slide"
+          onRequestClose={() => {
+            this.setState({ visible: false });
+          }}
+          visible={this.state.visible}
+          transparent={true}>
+          <ImageViewer imageUrls={this.state.images} />
+        </Modal>
       </View>
     );
   }
@@ -169,11 +209,7 @@ export class FlowViajando extends React.Component {
           <Icon name="check-circle" size={70} color="#4CAF50" />
         </View>
         <Text flex={1}>¡Vamos en camino!</Text>
-        <BottomButton
-          onPress={this.props.panic}
-          title="Pánico"
-          backgroundColor="#f44336"
-        />
+        <BottomButton onPress={this.props.panic} title="Pánico" backgroundColor="#f44336" />
       </View>
     );
   }

@@ -473,7 +473,7 @@ export default class Home extends React.Component {
         break;
       }
       case 2: {
-        this.setState({flowStatus: FLOW_STATUS_BOARDING})
+        this.setState({ flowStatus: FLOW_STATUS_BOARDING });
       }
     }
   };
@@ -746,7 +746,8 @@ export default class Home extends React.Component {
         case FLOW_STATUS_CONFIRMED:
           return <FlowAceptar onCancel={this.cancelOrder} />;
         case FLOW_STATUS_BOARDING:
-          return <FlowAbordando />;
+          console.log("estado", this.state);
+          return <FlowAbordando order={this.state.currentOrder} />;
         case FLOW_STATUS_TRAVELLING:
           return <FlowViajando panic={this.cancelOrder} />;
         case FLOW_STATUS_ARRIVED:
