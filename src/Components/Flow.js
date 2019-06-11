@@ -150,7 +150,7 @@ export class FlowAbordando extends React.Component {
   render() {
     return (
       <View style={styles.mainViewPaddingless}>
-        <Text style={styles.title} flex={1}>
+        <Text style={styles.displayTitle} flex={1}>
           Tu taxi está aquí
         </Text>
         <Text style={styles.disclaimer} flex={1}>
