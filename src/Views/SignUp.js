@@ -34,38 +34,42 @@ class SignUp extends Component {
 
   handleRegister = async () => {
     await this.setState({ registrando: true });
+
     if (this.state.registrando) {
-      let CanContinue = true;
+      let fieldsAreValid = true;
       for (key in this.state) {
         if (this.state[key].length === 0) {
-          CanContinue = false;
+          fieldsAreValid = false;
           break;
         }
       }
-      if (!CanContinue) {
-        Alert.alert("Error", "Por favor llene todos los campos para continuar.");
+      if (!fieldsAreValid) {
+        Alert.alert("Campos vacíos", "Por favor llena todos los campos para continuar.");
         this.setState({ registrando: false });
         return;
       } else {
         if (!/^((?!\.)[\w-_.]*[^.])(@\w+)(\.\w+(\.\w+)?[^.\W])$/.test(this.state.mail)) {
-          Alert.alert("Correo", "Por favor use un formato de correo valido.");
+          Alert.alert("Correo inválido", "Por favor usa un formato de correo válido.");
           this.setState({ registrando: false });
           return;
         }
         if (!/^[A-Za-z0-9]{6,}$/.test(this.state.password)) {
-          Alert.alert("Contraseña", "Por favor que la contraseña sea mayor a 6 caracteres.");
+          Alert.alert("Contraseña inválida", "La contraseña debe tener al menos 6 caracteres.");
           this.setState({ registrando: false });
           return;
         }
         if (!/^\+504\ \d{4}-\d{4}$/.test(this.state.phone)) {
-          Alert.alert("Numero de telefono", "Por favor use el formato indicado.");
+          Alert.alert("Numero de teléfono inválido", "Por favor usa el formato de teléfono indicado.");
           this.setState({ registrando: false });
           return;
         }
+
         firebase
           .auth()
           .createUserWithEmailAndPassword(this.state.mail, this.state.password)
           .then(async data => {
+            console.log("New User data", data);
+
             await firebase
               .firestore()
               .collection("clients")
@@ -75,7 +79,7 @@ class SignUp extends Component {
                 firstName: this.state.firstName,
                 lastName: this.state.lastName,
                 phone: this.state.phone,
-              });
+              }).catch(e => console.error(e));
           })
           .catch(error => {
             switch (error.code) {
@@ -96,7 +100,7 @@ class SignUp extends Component {
     }
 
     return (
-      <KeyboardAvoidingView style={styles.SignUpView} behavior="padding">
+      <KeyboardAvoidingView style={styles.signUpView} behavior="padding">
         <View style={styles.credentialsView}>
           <View style={styles.headerView}>
             <Text style={styles.title}>Crear una Cuenta</Text>
@@ -104,6 +108,7 @@ class SignUp extends Component {
           </View>
           <Input
             placeholder="Nombre"
+            value={this.state.firstName}
             leftIcon={<Icon name="person" size={24} color="black" style={styles.Icon} />}
             inputContainerStyle={styles.Input}
             leftIconContainerStyle={{ marginRight: 15 }}
@@ -112,6 +117,7 @@ class SignUp extends Component {
           />
           <Input
             placeholder="Apellido"
+            value={this.state.lastName}
             leftIcon={<Icon name="contacts" size={24} color="black" style={styles.Icon} />}
             inputContainerStyle={styles.Input}
             leftIconContainerStyle={{ marginRight: 15 }}
@@ -120,6 +126,7 @@ class SignUp extends Component {
           />
           <Input
             placeholder="Correo Electrónico"
+            value={this.state.mail}
             leftIcon={<Icon name="mail" size={24} color="black" style={styles.Icon} />}
             inputContainerStyle={styles.Input}
             leftIconContainerStyle={{ marginRight: 15 }}
@@ -130,6 +137,7 @@ class SignUp extends Component {
           />
           <Input
             placeholder="Contraseña"
+            value={this.state.password}
             leftIcon={<Icon name="vpn-key" size={24} color="black" style={styles.Icon} />}
             inputContainerStyle={styles.Input}
             leftIconContainerStyle={{ marginRight: 15 }}
@@ -159,7 +167,7 @@ class SignUp extends Component {
           />
         </View>
         <View style={styles.buttonRow}>
-          <Button title="Crear Cuenta" onPress={this.handleRegister} />
+          <Button title="Crear Cuenta" onPress={this.handleRegister} buttonStyle={styles.button}/>
         </View>
       </KeyboardAvoidingView>
     );
@@ -167,18 +175,22 @@ class SignUp extends Component {
 }
 
 const styles = StyleSheet.create({
-  SignUpView: {
+  signUpView: {
     backgroundColor: "#FF9800",
     justifyContent: "center",
     alignItems: "center",
     height: Dimensions.get("window").height,
   },
+
   credentialsView: {
-    width: Dimensions.get("window").width * 0.8,
+    backgroundColor: "white",
+    borderRadius: 10,
+    width: Dimensions.get("window").width * 0.9,
+    elevation: 2,
+    marginBottom: 15,
   },
 
   Input: {
-    backgroundColor: "white",
     borderRadius: 5,
     marginBottom: 15,
     padding: 5,
@@ -190,19 +202,27 @@ const styles = StyleSheet.create({
     width: "100%",
   },
 
+  button: {
+    width: "100%",
+    backgroundColor: "#4CAF50",
+    borderRadius: 10,
+    elevation: 3,
+  },
+
   headerView: {
     marginBottom: 10,
+    marginTop: 10,
   },
 
   title: {
-    color: "white",
+    //color: "white",
     fontSize: 25,
     fontWeight: "bold",
     textAlign: "center",
   },
 
   subtitle: {
-    color: "white",
+    //color: "white",
     fontSize: 20,
     textAlign: "center",
   },

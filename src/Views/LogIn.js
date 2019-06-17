@@ -51,6 +51,7 @@ class LogIn extends Component {
         await this.clear();
         return;
       }
+      
       firebase
         .auth()
         .signInWithEmailAndPassword(this.state.mail, this.state.password)
@@ -97,6 +98,10 @@ class LogIn extends Component {
     return (
       <KeyboardAvoidingView behavior={"padding"} style={styles.SignUpView}>
         <View style={styles.credentialsView}>
+          <View style={styles.headerView}>
+            <Text style={styles.title}>Bienvenido a Taxi App</Text>
+            <Text style={styles.subtitle}>Por favor inicia sesión</Text>
+          </View>
           <Input
             placeholder="Correo Electronico"
             leftIcon={<Icon name="mail" size={24} color="black" style={styles.Icon} />}
@@ -118,15 +123,19 @@ class LogIn extends Component {
           />
         </View>
         <View style={styles.buttonRow}>
-          <Button title="Iniciar Sesión" onPress={this.handleSignIn} />
+          <Button
+            buttonStyle={styles.registerButton}
+            title="Crear una Cuenta"
+            onPress={() => {
+              this.props.navigation.navigate("SignUp");
+            }}
+          />
+          <Button
+            buttonStyle={styles.button}
+            title="Iniciar Sesión"
+            onPress={this.handleSignIn}
+          />
         </View>
-        <TouchableOpacity
-          onPress={() => {
-            this.props.navigation.navigate("SignUp");
-          }}
-          style={{ marginTop: 5 }}>
-          <Text style={{ color: "white", textDecorationLine: "underline" }}>Registrarse</Text>
-        </TouchableOpacity>
       </KeyboardAvoidingView>
     );
   }
@@ -138,21 +147,58 @@ const styles = StyleSheet.create({
     alignItems: "center",
     height: Dimensions.get("window").height,
   },
+
   credentialsView: {
-    width: Dimensions.get("window").width * 0.8,
+    backgroundColor: "white",
+    borderRadius: 10,
+    width: Dimensions.get("window").width * 0.9,
+    elevation: 2,
+    marginBottom: 15,
   },
 
   Input: {
-    backgroundColor: "white",
     borderRadius: 5,
     marginBottom: 15,
     padding: 5,
   },
 
+  headerView: {
+    marginBottom: 10,
+    marginTop: 10,
+  },
+
+  title: {
+    //color: "white",
+    fontSize: 25,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+
+  subtitle: {
+    //color: "white",
+    fontSize: 20,
+    textAlign: "center",
+  },
+
   buttonRow: {
     flexDirection: "row",
     justifyContent: "space-evenly",
-    width: "100%",
+    width: Dimensions.get("window").width * 0.9,
+    height: 45
+  },
+
+  button: {
+    flex: 1,
+    backgroundColor: "#4CAF50",
+    borderRadius: 10,
+    elevation: 3,
+  },
+
+  registerButton: {
+    flex: 1,
+    backgroundColor: "#2196F3",
+    borderRadius: 10,
+    elevation: 3,
   },
 });
 

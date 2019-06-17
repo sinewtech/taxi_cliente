@@ -76,11 +76,11 @@ const INITIAL_REGION = {
   longitudeDelta: 0.1,
 };
 
-const rad = function(x) {
+const rad = x => {
   return (x * Math.PI) / 180;
 };
 
-const getDistance = function(p1, p2) {
+const getDistance = (p1, p2) => {
   var R = 6378137; // Earth’s mean radius in meter
   var dLat = rad(p2.lat - p1.lat);
   var dLong = rad(p2.lng - p1.lng);
@@ -90,6 +90,22 @@ const getDistance = function(p1, p2) {
   var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   var d = R * c;
   return d; // returns the distance in meter
+};
+
+const isInSearchRange = (lat, lng) => {
+  let dist = getDistance(
+    {
+      lat,
+      lng,
+    },
+    {
+      lat: INITIAL_REGION.latitude,
+      lng: INITIAL_REGION.longitude,
+    }
+  );
+
+  console.log("dist", dist);
+  return dist <= SEARCH_RADIUS;
 };
 
 async function registerForPushNotificationsAsync() {
@@ -255,20 +271,9 @@ export default class Home extends React.Component {
 
           responseJson.results.map(candidate => {
             cont++;
-            //candidate.persist();
 
-            let dist = getDistance(
-              {
-                lat: candidate.geometry.location.lat,
-                lng: candidate.geometry.location.lng,
-              },
-              {
-                lat: INITIAL_REGION.latitude,
-                lng: INITIAL_REGION.longitude,
-              }
-            );
-
-            if (dist > SEARCH_RADIUS) return;
+            if (!isInSearchRange(candidate.geometry.location.lat, candidate.geometry.location.lng))
+              return;
 
             markers.push(
               <MapView.Marker
@@ -279,11 +284,9 @@ export default class Home extends React.Component {
                 }}
                 title={candidate.name}
                 description={candidate.formatted_address}
-                pinColor="red"
+                pinColor={this.state.selectingLocation === "origin" ? COLOR_BLUE : COLOR_RED}
                 onPress={async () => {
-                  if (this.state.flowStatus === FLOW_STATUS_NONE) {
-                    this.placeDetails(candidate.place_id);
-                  }
+                  this.placeDetails(candidate.place_id);
                 }}
               />
             );
@@ -514,7 +517,7 @@ export default class Home extends React.Component {
   }
 
   deactivate = () => {
-    if (this.state.flowStatus == FLOW_STATUS_NONE) {
+    if (this.state.flowStatus === FLOW_STATUS_NONE) {
       this.setState({ active: false, flowStatus: FLOW_STATUS_NONE });
     } else {
       this.cancelOrder();
@@ -947,7 +950,22 @@ export default class Home extends React.Component {
   };
 
   handleLongPress = async markerLocation => {
-    if (this.state.flowStatus !== FLOW_STATUS_NONE) return;
+    if (this.state.flowStatus !== FLOW_STATUS_NONE && this.state.flowStatus !== FLOW_STATUS_QUOTING)
+      return;
+
+    if (
+      !isInSearchRange(
+        markerLocation.nativeEvent.coordinate.latitude,
+        markerLocation.nativeEvent.coordinate.longitude
+      )
+    ) {
+      Alert.alert(
+        "No podemos ir a ese lugar",
+        "Lo sentimos, el lugar que seleccionaste está fuera de nuestra área de servicio."
+      );
+      return;
+    }
+
     markerLocation.persist();
     this.wait();
 
@@ -957,11 +975,27 @@ export default class Home extends React.Component {
     );
   };
 
-  handlePoiClick(location) {
-    if (this.state.flowStatus == FLOW_STATUS_NONE) {
+  handlePoiClick = location => {
+    if (
+      !isInSearchRange(
+        location.nativeEvent.coordinate.latitude,
+        location.nativeEvent.coordinate.longitude
+      )
+    ) {
+      Alert.alert(
+        "No podemos ir a ese lugar",
+        "Lo sentimos, el lugar que seleccionaste está fuera de nuestra área de servicio."
+      );
+      return;
+    }
+
+    if (
+      this.state.flowStatus === FLOW_STATUS_NONE ||
+      this.state.flowStatus === FLOW_STATUS_QUOTING
+    ) {
       this.placeDetails(location.nativeEvent.placeId);
     }
-  }
+  };
 
   drawPolyline() {
     var coords = [];
@@ -1076,15 +1110,15 @@ export default class Home extends React.Component {
                     size={25}
                     color={COLOR_ORANGE}
                     onPress={() => {
-                      if (this.state.active) {
-                        if (this.state.flowStatus === FLOW_STATUS_NONE) {
+                      if (this.state.flowStatus === FLOW_STATUS_NONE) {
+                        if (this.state.active) {
                           this.searchPlaces(this.state.busqueda);
+                          this.deactivate();
                         } else {
-                          Alert.alert("Error", "Solo puedes pedir un taxi a la vez.");
+                          this.activate();
                         }
-                        this.deactivate();
                       } else {
-                        this.activate();
+                        Alert.alert("Error", "Solo puedes pedir un taxi a la vez.");
                       }
                     }}
                   />

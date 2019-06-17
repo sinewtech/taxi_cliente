@@ -174,7 +174,7 @@ export let animatedStyles = {
     }),
     borderRadius: resultViewAnimation.interpolate({
       inputRange: [0, 1],
-      outputRange: [5, 0],
+      outputRange: [10, 0],
     }),
     bottom: resultViewAnimation.interpolate({
       inputRange: [0, 1],
