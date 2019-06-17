@@ -31,6 +31,7 @@ export const styles = StyleSheet.create({
     width: "100%",
     height: "10%",
     overflow: "hidden",
+    zIndex: 10
   },
 
   resultView: {
@@ -139,6 +140,17 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     color: "#616161",
   },
+
+  locationButton: {
+    elevation: 3,
+  },
+
+  locationButtonView: {
+    position: "absolute",
+    bottom: "35%",
+    right: "2%",
+    zIndex: 0
+  }
 });
 
 export let resultViewAnimation = new Animated.Value(0);

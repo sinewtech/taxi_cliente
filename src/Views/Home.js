@@ -32,6 +32,7 @@ import {
   FlowAbordando,
   FlowViajando,
   FlowTerminado,
+  FlowNoEncontrado,
 } from "../Components/Flow.js";
 import { TouchableNativeFeedback } from "react-native-gesture-handler";
 
@@ -62,16 +63,17 @@ const FLOW_STATUS_CONFIRMED = 5;
 const FLOW_STATUS_BOARDING = 6;
 const FLOW_STATUS_TRAVELLING = 7;
 const FLOW_STATUS_ARRIVED = 8;
+const FLOW_STATUS_NO_RESULTS = 9;
 const FLOW_STATUS_ERROR = -1;
 
 const API_KEY = "AIzaSyApNgtxFBp0SXSHljP_xku6peNCzjTFWM4";
 
 const REFERENCE_RADIUS = 100;
-const SEARCH_RADIUS = 20000;
+const SEARCH_RADIUS = 10000;
 
 const INITIAL_REGION = {
-  latitude: 14.0723,
-  longitude: -87.1921,
+  latitude: 14.085043,
+  longitude: -87.206184,
   latitudeDelta: 0.1,
   longitudeDelta: 0.1,
 };
@@ -104,7 +106,6 @@ const isInSearchRange = (lat, lng) => {
     }
   );
 
-  console.log("dist", dist);
   return dist <= SEARCH_RADIUS;
 };
 
@@ -192,6 +193,18 @@ export default class Home extends React.Component {
     });
   }
 
+  goToUserLocation = async (ask) => {
+    if (this.map) {
+      if (ask) await this._getLocationAsync();
+      this.map.animateToRegion({
+        latitude: this.state.location.coords.latitude,
+        longitude: this.state.location.coords.longitude,
+        latitudeDelta: 0.02,
+        longitudeDelta: 0.02
+      })
+    }
+  };
+
   saveUser = async user => {
     await this.setState({ user });
 
@@ -257,7 +270,8 @@ export default class Home extends React.Component {
         API_KEY +
         "&query=" +
         query +
-        "&location=14.0723,-87.1921&radius=20000"
+        "&location=14.0723,-87.1921&radius=" +
+        SEARCH_RADIUS
     )
       .then(response => response.json())
       .then(async responseJson => {
@@ -307,6 +321,7 @@ export default class Home extends React.Component {
           this.map.fitToElements(true);
         } else {
           console.log("No se pudo encontrar el lugar", query);
+          this.setState({ flowStatus: FLOW_STATUS_NO_RESULTS });
         }
       })
       .catch(error => {
@@ -353,7 +368,7 @@ export default class Home extends React.Component {
 
   placeDetails = query => {
     this.wait();
-    console.log("Recuperando detalles para", this.state.selectingLocation, query)
+    console.log("Recuperando detalles para", this.state.selectingLocation, query);
 
     fetch(
       "https://maps.googleapis.com/maps/api/place/details/json?key=" + API_KEY + "&placeid=" + query
@@ -361,7 +376,6 @@ export default class Home extends React.Component {
       .then(response => response.json())
       .then(async responseJson => {
         if (responseJson.status === "OK") {
-
           await this.setMarkerLocations(
             responseJson.result.geometry.location.lat,
             responseJson.result.geometry.location.lng
@@ -453,12 +467,13 @@ export default class Home extends React.Component {
 
   _getLocationAsync = async () => {
     let { status } = await Permissions.askAsync(Permissions.LOCATION);
+
     if (status !== "granted") {
       console.error("No se tiene permiso para el GPS");
     }
 
     let location = await Location.getCurrentPositionAsync({});
-    this.setState({ location });
+    await this.setState({ location });
   };
 
   _handleNotification = notification => {
@@ -561,7 +576,7 @@ export default class Home extends React.Component {
 
   selectOrigin = () => {
     console.log("Seleccionando origen");
-    
+
     this.setState({
       flowStatus: FLOW_STATUS_NONE,
       selectingLocation: "origin",
@@ -776,6 +791,8 @@ export default class Home extends React.Component {
           return <FlowViajando panic={this.cancelOrder} />;
         case FLOW_STATUS_ARRIVED:
           return <FlowTerminado dismiss={this.setState({ flowStatus: FLOW_STATUS_NONE })} />;
+        case FLOW_STATUS_NO_RESULTS:
+          return <FlowNoEncontrado dismiss={this.setState({ flowStatus: FLOW_STATUS_NONE })} />;
         default:
           break;
       }
@@ -1046,9 +1063,11 @@ export default class Home extends React.Component {
         return (
           <View style={{ flex: 1 }}>
             <MapView
+              onMapReady={() => this.goToUserLocation(true)}
               onLongPress={this.handleLongPress}
               onPoiClick={this.handlePoiClick.bind(this)}
               showsUserLocation={true}
+              showsMyLocationButton={false}
               ref={component => (this.map = component)}
               style={{ flex: 1 }}
               showsCompass={false}
@@ -1066,6 +1085,16 @@ export default class Home extends React.Component {
                 coordinates={this.drawPolyline()}
               />
             </MapView>
+            <View style={styles.locationButtonView}>
+              <Icon
+                name="gps-fixed"
+                reverse
+                raised
+                containerStyle={styles.locationButton}
+                color={COLOR_ORANGE}
+                onPress={() => this.goToUserLocation(false)}
+              />
+            </View>
             <View
               style={
                 this.state.active
@@ -1076,7 +1105,9 @@ export default class Home extends React.Component {
               <Input
                 editable={this.state.flowStatus === FLOW_STATUS_NONE}
                 containerStyle={
-                  this.state.active ? [styles.searchBar, styles.noElevation] : styles.searchBar
+                  this.state.active
+                    ? [styles.searchBar, styles.noElevation]
+                    : styles.searchBar
                 }
                 inputContainerStyle={styles.searchInput}
                 underlineColorAndroid="transparent"
@@ -1127,6 +1158,7 @@ export default class Home extends React.Component {
                     onPress={() => {
                       if (this.state.flowStatus === FLOW_STATUS_NONE) {
                         if (this.state.active) {
+                          this.wait();
                           this.searchPlaces(this.state.busqueda);
                           this.deactivate();
                         } else {

@@ -114,6 +114,29 @@ export class FlowError extends React.Component {
   }
 }
 
+export class FlowNoEncontrado extends React.Component {
+  render() {
+    return (
+      <View style={styles.mainViewPaddingless}>
+        <View flex={2}>
+          <Icon name="error" size={70} color="#f44336" />
+        </View>
+        <Text style={styles.displayTitle} flex={1}>
+          No se encontraron lugares
+        </Text>
+        <Text style={styles.disclaimer} flex={1}>
+          Puedes intentar usando otro término de búsqueda.
+        </Text>
+        <BottomButton
+          backgroundColor="#4CAF50"
+          title="Regresar"
+          onPress={this.props.onConfirm}
+        />
+      </View>
+    );
+  }
+}
+
 export class FlowAceptar extends React.Component {
   render() {
     return (
