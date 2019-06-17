@@ -353,6 +353,7 @@ export default class Home extends React.Component {
 
   placeDetails = query => {
     this.wait();
+    console.log("Recuperando detalles para", this.state.selectingLocation, query)
 
     fetch(
       "https://maps.googleapis.com/maps/api/place/details/json?key=" + API_KEY + "&placeid=" + query
@@ -360,6 +361,7 @@ export default class Home extends React.Component {
       .then(response => response.json())
       .then(async responseJson => {
         if (responseJson.status === "OK") {
+
           await this.setMarkerLocations(
             responseJson.result.geometry.location.lat,
             responseJson.result.geometry.location.lng
@@ -533,7 +535,7 @@ export default class Home extends React.Component {
     });
   }
 
-  clear = () => {
+  reset = () => {
     this.setState({
       active: false,
       flowStatus: FLOW_STATUS_NONE,
@@ -546,7 +548,20 @@ export default class Home extends React.Component {
     });
   };
 
+  clear = () => {
+    this.setState({
+      active: false,
+      flowStatus: FLOW_STATUS_NONE,
+      polyline: [],
+      markers: [],
+      lugares: [],
+      busqueda: "",
+    });
+  };
+
   selectOrigin = () => {
+    console.log("Seleccionando origen");
+    
     this.setState({
       flowStatus: FLOW_STATUS_NONE,
       selectingLocation: "origin",
@@ -571,7 +586,7 @@ export default class Home extends React.Component {
       {
         text: "Cancelar Carrera",
         onPress: () => {
-          this.clear();
+          this.reset();
           if (this.state.currentOrder) {
             firebase
               .database()
