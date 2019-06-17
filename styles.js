@@ -5,6 +5,10 @@ export const styles = StyleSheet.create({
     backgroundColor: "white",
   },
 
+  noElevation: {
+    elevation: 0
+  },
+
   fullCenter: {
     margin: "auto",
     justifyContent: "center",
@@ -25,19 +29,16 @@ export const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     width: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingBottom: 12,
-    height: "12%",
+    height: "10%",
     overflow: "hidden",
   },
 
   resultView: {
+    elevation: 2,
     flex: 1,
     backgroundColor: "white",
     position: "absolute",
     margin: 0,
-    bottom: 0,
     shadowOffset: {
       width: 10,
       height: 10,
@@ -47,31 +48,20 @@ export const styles = StyleSheet.create({
   },
 
   searchBar: {
-    flex: 8,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center", 
+    flex: 1,
     borderRadius: 10,
     marginTop: 10,
     marginRight: 10,
-    marginLeft: 15,
+    marginLeft: 10,
     backgroundColor: "#ffffff",
-    height: 40,
-    borderWidth: 0,
-    borderColor: "#cceeff",
-    padding: 5,
-    paddingLeft: 10,
-    shadowOffset: {
-      width: 10,
-      height: 10,
-    },
-    shadowOpacity: 1,
+    height: "75%",
+    elevation: 2,
+    overflow: "hidden"
   },
 
   searchInput: {
-    flex: 6,
-    fontSize: 18,
-    marginLeft: 10,
+    flex: 1,
+    borderBottomColor: "rgba(255, 255, 255, 0)",
   },
 
   rutaIcon: {
@@ -95,8 +85,9 @@ export const styles = StyleSheet.create({
     overflow: "hidden",
   },
 
-  icon: {
-    padding: 5,
+  searchBackIcon: {
+    marginRight: 10,
+    marginLeft: -10,
   },
 
   suggest: {
@@ -171,7 +162,7 @@ export let animatedStyles = {
     }),
     height: resultViewAnimation.interpolate({
       inputRange: [0, 1],
-      outputRange: ["32%", "88%"],
+      outputRange: ["32%", "90%"],
     }),
     marginLeft: resultViewAnimation.interpolate({
       inputRange: [0, 1],
@@ -181,13 +172,13 @@ export let animatedStyles = {
       inputRange: [0, 1],
       outputRange: ["4%", "0%"],
     }),
-    borderTopLeftRadius: resultViewAnimation.interpolate({
+    borderRadius: resultViewAnimation.interpolate({
       inputRange: [0, 1],
       outputRange: [5, 0],
     }),
-    borderTopRightRadius: resultViewAnimation.interpolate({
+    bottom: resultViewAnimation.interpolate({
       inputRange: [0, 1],
-      outputRange: [5, 0],
+      outputRange: ["2%", "0%"],
     }),
   },
 };

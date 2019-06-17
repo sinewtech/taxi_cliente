@@ -8,13 +8,16 @@ import {
   createAppContainer,
   createStackNavigator,
   createSwitchNavigator,
+  DrawerItems,
+  SafeAreaView,
 } from "react-navigation";
 import LogOut from "./src/Components/LogOut";
 
 // Ignorar los warnings de firebase
 
-import { YellowBox } from "react-native";
+import { YellowBox, View, ScrollView, Text, StyleSheet } from "react-native";
 import _ from "lodash";
+import { Icon, Avatar, Divider } from "react-native-elements";
 
 YellowBox.ignoreWarnings(["Setting a timer"]);
 const _console = _.clone(console);
@@ -32,17 +35,47 @@ class App extends Component {
   }
 }
 
-const AppStack = createDrawerNavigator({
-  Home: {
-    screen: Home,
+const drawerContent = props => (
+  <SafeAreaView forceInset={{ top: "always", horizontal: "never" }}>
+    <View style={styles.drawerHeaderView}>
+      <View style={styles.avatarView}>
+        <Avatar rounded title="B" />
+      </View>
+      <View style={styles.headerInfo}>
+        <Text style={styles.title}>Bienvenido</Text>
+        <Text style={styles.subtitle}>Beta Tester</Text>
+      </View>
+    </View>
+    <ScrollView>
+      <DrawerItems {...props} />
+    </ScrollView>
+  </SafeAreaView>
+);
+
+const homeIcon = <Icon name="directions-car" color="#616161" />;
+const logoutIcon = <Icon name="logout" type="material-community" color="#616161" />;
+
+const AppStack = createDrawerNavigator(
+  {
+    Home: {
+      screen: Home,
+      navigationOptions: ({ navigation }) => ({
+        title: "Pedir un vehículo",
+        drawerIcon: homeIcon,
+      }),
+    },
+    UserValidator: {
+      screen: LogOut,
+      navigationOptions: ({ navigation }) => ({
+        title: "Cerrar sesión",
+        drawerIcon: logoutIcon,
+      }),
+    },
   },
-  UserValidator: {
-    screen: LogOut,
-    navigationOptions: ({ navigation }) => ({
-      title: "LogOut",
-    }),
-  },
-});
+  {
+    contentComponent: drawerContent,
+  }
+);
 
 const AuthStack = createStackNavigator({
   LogIn: {
@@ -72,5 +105,40 @@ const Application = createAppContainer(
     }
   )
 );
+
+const styles = StyleSheet.create({
+  drawerHeaderView: {
+    height: "20%",
+    flexDirection: "row",
+    marginBottom: 10
+  },
+
+  title: {
+    fontSize: 18,
+    fontWeight: "bold"
+  },
+
+  subtitle: {
+    fontSize: 16,
+  },
+
+  headerInfo: {
+    flex: 3,
+    justifyContent: "center"
+  },
+
+  avatarView: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    height: "100%",
+    width: "100%",
+  },
+
+  avatar: {
+    height: 25,
+    width: 25
+  }
+});
 
 export default App;

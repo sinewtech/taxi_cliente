@@ -5,10 +5,10 @@ import {
   Alert,
   Dimensions,
   Text,
-  TextInput,
   View,
   Animated,
   ScrollView,
+  KeyboardAvoidingView,
   Keyboard,
   BackHandler,
   ActivityIndicator,
@@ -19,8 +19,7 @@ import { Notifications } from "expo";
 import * as Permissions from "expo-permissions";
 import * as Location from "expo-location";
 import MapView from "react-native-maps";
-import { Icon } from "react-native-elements";
-import Ripple from "react-native-material-ripple";
+import { Icon, Input } from "react-native-elements";
 import Waiting from "../Components/Waiting";
 import Bienvenida from "../Components/Bienvenida.js";
 import Recientes from "../Components/Recientes.js";
@@ -34,10 +33,21 @@ import {
   FlowViajando,
   FlowTerminado,
 } from "../Components/Flow.js";
+import { TouchableNativeFeedback } from "react-native-gesture-handler";
 
 let masterStyles = require("../../styles.js");
 let styles = masterStyles.styles;
 let animatedStyles = masterStyles.animatedStyles;
+
+const FIRESTORE = firebase.firestore();
+
+const COLOR_AMBER = "#FFC107";
+const COLOR_ORANGE = "#FF9800";
+const COLOR_GREEN = "#4CAF50";
+const COLOR_LIGHTGREEN = "#8BC34A";
+const COLOR_BLUE = "#2196F3";
+const COLOR_LIGHTBLUE = "#03A9F4";
+const COLOR_RED = "#f44336";
 
 const QUOTE_STATUS_PENDING = 0;
 const QUOTE_STATUS_SUCCESS = 1;
@@ -56,11 +66,30 @@ const FLOW_STATUS_ERROR = -1;
 
 const API_KEY = "AIzaSyApNgtxFBp0SXSHljP_xku6peNCzjTFWM4";
 
+const REFERENCE_RADIUS = 100;
+const SEARCH_RADIUS = 20000;
+
 const INITIAL_REGION = {
   latitude: 14.0723,
   longitude: -87.1921,
   latitudeDelta: 0.1,
   longitudeDelta: 0.1,
+};
+
+const rad = function(x) {
+  return (x * Math.PI) / 180;
+};
+
+const getDistance = function(p1, p2) {
+  var R = 6378137; // Earth’s mean radius in meter
+  var dLat = rad(p2.lat - p1.lat);
+  var dLong = rad(p2.lng - p1.lng);
+  var a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(rad(p1.lat)) * Math.cos(rad(p2.lat)) * Math.sin(dLong / 2) * Math.sin(dLong / 2);
+  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  var d = R * c;
+  return d; // returns the distance in meter
 };
 
 async function registerForPushNotificationsAsync() {
@@ -132,29 +161,76 @@ export default class Home extends React.Component {
       },
       userUID: "0",
       user: "waiting",
-    };
-
-    let save = user => {
-      this.setState({ user });
-
-      if (user) {
-        this.setState({ userUID: user.uid });
-      }
+      userData: {},
     };
 
     let register = () => this.registerPush();
 
     firebase.auth().onAuthStateChanged(user => {
       if (user) {
-        save(user);
+        this.saveUser(user);
         register();
       } else {
-        save(null);
+        this.saveUser(null);
       }
     });
   }
+
+  saveUser = async user => {
+    await this.setState({ user });
+
+    if (user) {
+      await this.setState({ userUID: user.uid });
+
+      var docRef = FIRESTORE.collection("clients").doc(this.state.userUID);
+
+      docRef
+        .get()
+        .then(doc => {
+          if (doc.exists) {
+            this.setState({ userData: doc.data() });
+          } else {
+            // doc.data() will be undefined in this case
+            console.log("No se encontraron los datos del usuario.");
+          }
+        })
+        .catch(error => {
+          console.error("Error recuperando los datos del usuario:", error);
+        });
+    }
+  };
+
   wait = () => {
     this.setState({ flowStatus: FLOW_STATUS_WAITING });
+  };
+
+  getPlaceReference = async (lat, lng) => {
+    let query =
+      "https://maps.googleapis.com/maps/api/place/nearbysearch/json?key=" +
+      API_KEY +
+      "&location=" +
+      lat +
+      "," +
+      lng +
+      "&radius=" +
+      REFERENCE_RADIUS;
+
+    return fetch(query)
+      .then(response => response.json())
+      .then(responseJson => {
+        for (let place of responseJson.results) {
+          if (place.name != "Tegucigalpa") {
+            console.log("Se encontró un lugar cercano:", place.name);
+            return "Cerca de " + place.name;
+          }
+        }
+
+        return "Ubicación Exacta";
+      })
+      .catch(e => {
+        console.error(e);
+        return "Ocurrió un error";
+      });
   };
 
   searchPlaces = query => {
@@ -168,16 +244,31 @@ export default class Home extends React.Component {
         "&location=14.0723,-87.1921&radius=20000"
     )
       .then(response => response.json())
-      .then(responseJson => {
+      .then(async responseJson => {
         if (responseJson.status == "OK") {
           //Inicializar resultados de búsqueda
           var markers = [];
           var lugares = [];
           var cont = 0;
 
+          //console.log("Text search results:", responseJson);
+
           responseJson.results.map(candidate => {
             cont++;
             //candidate.persist();
+
+            let dist = getDistance(
+              {
+                lat: candidate.geometry.location.lat,
+                lng: candidate.geometry.location.lng,
+              },
+              {
+                lat: INITIAL_REGION.latitude,
+                lng: INITIAL_REGION.longitude,
+              }
+            );
+
+            if (dist > SEARCH_RADIUS) return;
 
             markers.push(
               <MapView.Marker
@@ -188,38 +279,10 @@ export default class Home extends React.Component {
                 }}
                 title={candidate.name}
                 description={candidate.formatted_address}
-                pincolor="red"
+                pinColor="red"
                 onPress={async () => {
                   if (this.state.flowStatus === FLOW_STATUS_NONE) {
-                    let location = await Location.getProviderStatusAsync();
-
-                    if (location.gpsAvailable && this.state.usingGps) {
-                      let gpslocation = await Location.getCurrentPositionAsync();
-                      console.log("Current Location", gpslocation);
-
-                      await this.setState({
-                        origin: {
-                          lat: gpslocation.coords.latitude,
-                          lng: gpslocation.coords.longitude,
-                        },
-
-                        destination: {
-                          name: "Marcador",
-                          lat: candidate.nativeEvent.coordinate.latitude,
-                          lng: candidate.nativeEvent.coordinate.longitude,
-                        },
-                        flowStatus: FLOW_STATUS_QUOTING,
-                      });
-
-                      await this.getPoly();
-                    } else {
-                      Alert.alert(
-                        "Servicios GPS",
-                        "Por favor active los servicios de GPS para continuar."
-                      );
-                    }
-                  } else {
-                    Alert.alert("Error", "Solo puedes pedir una carrera a la vez.");
+                    this.placeDetails(candidate.place_id);
                   }
                 }}
               />
@@ -233,12 +296,14 @@ export default class Home extends React.Component {
                 lat: candidate.geometry.location.lat,
                 lng: candidate.geometry.location.lng,
               },
+              icono: candidate.icon,
             });
           });
 
-          this.setState({ markers, lugares, polyline: [] });
+          await this.setState({ markers, lugares, polyline: [] });
+          this.map.fitToElements(true);
         } else {
-          console.log("Status failed");
+          console.log("No se pudo encontrar el lugar", query);
         }
       })
       .catch(error => {
@@ -275,7 +340,7 @@ export default class Home extends React.Component {
         if (responseJson.status == "OK") {
           this.setState({ lugaresAuto: responseJson.predictions });
         } else {
-          console.log("Status failed");
+          console.log("No se pudo autocompletar", query);
         }
       })
       .catch(error => {
@@ -290,103 +355,38 @@ export default class Home extends React.Component {
       "https://maps.googleapis.com/maps/api/place/details/json?key=" + API_KEY + "&placeid=" + query
     )
       .then(response => response.json())
-      .then(responseJson => {
-        if (responseJson.status == "OK") {
-          var markers = this.state.markers;
-
-          if (this.state.selectingLocation != "origin") {
-            markers = [];
-          }
-
-          markers.push(
-            <MapView.Marker
-              key={query}
-              coordinate={{
-                latitude: responseJson.result.geometry.location.lat,
-                longitude: responseJson.result.geometry.location.lng,
-              }}
-              title={responseJson.result.name}
-              description={responseJson.result.formatted_address}
-              pincolor={this.state.selectingLocation == "origin" ? "blue" : "red"}
-              onPress={async () => {
-                if (this.state.flowStatus === FLOW_STATUS_NONE) {
-                  let location = await Location.getProviderStatusAsync();
-
-                  if (location.gpsAvailable) {
-                    await this.setState({
-                      flowStatus: FLOW_STATUS_QUOTING,
-                    });
-
-                    if (this.state.selectingLocation == "origin") {
-                      await this.setState({
-                        origin: {
-                          name: responseJson.result.name,
-                          lat: responseJson.result.geometry.location.lat,
-                          lng: responseJson.result.geometry.location.lng,
-                        },
-                      });
-                    } else {
-                      await this.setState({
-                        destination: {
-                          name: responseJson.result.name,
-                          lat: responseJson.result.geometry.location.lat,
-                          lng: responseJson.result.geometry.location.lng,
-                        },
-                      });
-                    }
-
-                    await this.getPoly();
-                  } else {
-                    Alert.alert("Servicios GPS", "Por favor active los servicios GPS");
-                  }
-                }
-              }}
-            />
+      .then(async responseJson => {
+        if (responseJson.status === "OK") {
+          await this.setMarkerLocations(
+            responseJson.result.geometry.location.lat,
+            responseJson.result.geometry.location.lng
           );
-
-          //console.log(responseJson.result.geometry);
-          let coords = {
-            latitude: responseJson.result.geometry.location.lat,
-            longitude: responseJson.result.geometry.location.lng,
-            // latitudeDelta: responseJson.result.geometry.viewport.southwest.lat,
-            // longitudeDelta: responseJson.result.geometry.viewport.southwest.lng
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          };
-
-          this.map.animateToRegion(coords, 500);
 
           this.setState({
             lugarActual: responseJson.result,
-            markers,
             active: false,
             flowStatus: FLOW_STATUS_QUOTING,
           });
 
-          if (this.state.selectingLocation == "origin") {
+          let placeDetails = {
+            name: responseJson.result.name,
+            address: responseJson.result.formatted_address,
+            lat: responseJson.result.geometry.location.lat,
+            lng: responseJson.result.geometry.location.lng,
+            placeId: query,
+          };
+
+          if (this.state.selectingLocation === "origin") {
             this.setState({
-              origin: {
-                name: responseJson.result.name,
-                address: responseJson.result.formatted_address,
-                lat: responseJson.result.geometry.location.lat,
-                lng: responseJson.result.geometry.location.lng,
-                placeId: query,
-              },
+              origin: placeDetails,
             });
           } else {
             this.setState({
-              destination: {
-                name: responseJson.result.name,
-                address: responseJson.result.formatted_address,
-                lat: responseJson.result.geometry.location.lat,
-                lng: responseJson.result.geometry.location.lng,
-                placeId: query,
-              },
+              destination: placeDetails,
             });
           }
-          //this._map.animateToCoordinate({ latitude: responseJson.result.geometry.location.lat, longitude: responseJson.result.geometry.location.lng}, 1);
         } else {
-          console.log("Status failed");
+          console.log("No se pudo conseguir detalles del lugar", query, responseJson);
         }
       })
       .catch(error => {
@@ -397,7 +397,6 @@ export default class Home extends React.Component {
   registerPush = () => {
     registerForPushNotificationsAsync()
       .then(pushToken => {
-        console.log(pushToken);
         if (pushToken) {
           firebase
             .firestore()
@@ -411,7 +410,7 @@ export default class Home extends React.Component {
                 let deviceJson = DocumentSnapshot.data()["pushDevices"];
                 for (var token in deviceJson) {
                   if (deviceJson[token] === pushToken) {
-                    console.log("Pushtoken ya existe para usuario.");
+                    console.log("PushToken ya existe para usuario.");
                     return;
                   } else {
                     console.log("Agregando nuevo PushToken", pushToken);
@@ -500,7 +499,12 @@ export default class Home extends React.Component {
           //console.log(polyline);
           this.setState({ polyline });
         } else {
-          console.log("Status failed");
+          console.log(
+            "Polyline fallida con origen",
+            this.state.origin,
+            " y destino",
+            this.state.destination
+          );
         }
       });
   }
@@ -685,8 +689,8 @@ export default class Home extends React.Component {
 
   resultViewContent() {
     const manualHeader = (
-      <Ripple
-        style={styles.manual}
+      <TouchableNativeFeedback
+        background={TouchableNativeFeedback.SelectableBackground()}
         onPress={() => {
           this.setState({
             flowStatus: FLOW_STATUS_QUOTING,
@@ -702,14 +706,16 @@ export default class Home extends React.Component {
           }
           Keyboard.dismiss();
         }}>
-        <View flex={5}>
-          <Text style={styles.manualSubtitle}>Ir a esta dirección</Text>
-          <Text style={styles.manualTitle}>{this.state.busqueda}</Text>
+        <View style={styles.manual}>
+          <View flex={5}>
+            <Text style={styles.manualSubtitle}>Ir a esta dirección</Text>
+            <Text style={styles.manualTitle}>{this.state.busqueda}</Text>
+          </View>
+          <View flex={1}>
+            <Icon name="directions" size={25} color={COLOR_GREEN} reverse raised />
+          </View>
         </View>
-        <View flex={1}>
-          <Icon name="directions" size={40} color="#212121" />
-        </View>
-      </Ripple>
+      </TouchableNativeFeedback>
     );
 
     if (this.state.flowStatus != FLOW_STATUS_NONE) {
@@ -759,69 +765,69 @@ export default class Home extends React.Component {
       return this.state.active ? (
         <Recientes />
       ) : (
-        <Bienvenida selectingOrigin={this.state.selectingLocation == "origin"} />
+        <Bienvenida
+          userName={this.state.userData.firstName}
+          selectingOrigin={this.state.selectingLocation == "origin"}
+        />
       );
     } else {
       if (this.state.lugares.length > 0) {
         let lugares = [];
 
-        this.state.lugares.map(suge => {
+        this.state.lugares.map(candidate => {
           lugares.push(
-            <Ripple
-              key={suge.id}
-              onPress={() => {
-                this.setState({
-                  polyline: [],
-                  flowStatus: FLOW_STATUS_QUOTING,
-                  active: false,
-                });
-
-                {
-                  this.state.selectingLocation == "origin"
-                    ? this.setState({ origin: { name: suge.nombre } })
-                    : this.setState({ destination: { name: suge.nombre } });
-                }
-
-                this.placeDetails(suge.id);
+            <TouchableNativeFeedback
+              background={TouchableNativeFeedback.SelectableBackground()}
+              key={candidate.id}
+              onPress={async () => {
+                await this.wait();
+                await this.clear();
+                await this.deactivate();
+                await this.placeDetails(candidate.id);
               }}>
-              <View style={styles.suggest}>
-                <Text style={styles.suggestTitle}>{suge.nombre}</Text>
-                <Text style={styles.suggestSubtitle}>{suge.direccion}</Text>
+              <View>
+                <View style={styles.suggest}>
+                  <Text style={styles.suggestTitle}>{candidate.nombre}</Text>
+                  <Text style={styles.suggestSubtitle}>{candidate.direccion}</Text>
+                </View>
               </View>
-            </Ripple>
+            </TouchableNativeFeedback>
           );
         });
 
         return (
-          <View>
+          <KeyboardAvoidingView behavior="padding">
             {this.state.active ? manualHeader : null}
             <ScrollView keyboardShouldPersistTaps={"handled"}>
-              {lugares.map(suge => suge)}
+              {lugares.map(candidate => candidate)}
             </ScrollView>
-          </View>
+          </KeyboardAvoidingView>
         );
       } else {
         let sugerencias = [];
 
-        this.state.lugaresAuto.map(suge => {
+        this.state.lugaresAuto.map(candidate => {
           sugerencias.push(
-            <Ripple
-              key={suge.place_id}
+            <TouchableNativeFeedback
+              background={TouchableNativeFeedback.SelectableBackground()}
+              key={candidate.place_id}
               onPress={async () => {
-                this.setState({
-                  flowStatus: FLOW_STATUS_WAITING,
-                  polyline: [],
-                });
-
-                this.placeDetails(suge.place_id);
+                await this.wait();
+                await this.clear();
+                await this.deactivate();
+                await this.placeDetails(candidate.place_id);
               }}>
-              <View style={styles.suggest}>
-                <Text style={styles.suggestTitle}>{suge.structured_formatting.main_text}</Text>
-                <Text style={styles.suggestSubtitle}>
-                  {suge.structured_formatting.secondary_text}
-                </Text>
+              <View>
+                <View style={styles.suggest}>
+                  <Text style={styles.suggestTitle}>
+                    {candidate.structured_formatting.main_text}
+                  </Text>
+                  <Text style={styles.suggestSubtitle}>
+                    {candidate.structured_formatting.secondary_text}
+                  </Text>
+                </View>
               </View>
-            </Ripple>
+            </TouchableNativeFeedback>
           );
         });
 
@@ -829,7 +835,7 @@ export default class Home extends React.Component {
           <View>
             {this.state.active ? manualHeader : null}
             <ScrollView keyboardShouldPersistTaps={"handled"}>
-              {sugerencias.map(suge => suge)}
+              {sugerencias.map(candidate => candidate)}
             </ScrollView>
           </View>
         );
@@ -847,78 +853,108 @@ export default class Home extends React.Component {
     return true;
   };
 
-  handleLongPress = marketlocation => {
-    if (this.state.flowStatus !== FLOW_STATUS_NONE) return;
+  getUserLocation = async () => {
+    let location = await Location.getProviderStatusAsync();
 
+    if (location.gpsAvailable) {
+      let gpslocation = await Location.getCurrentPositionAsync({});
+
+      await this.setState({
+        origin: {
+          lat: gpslocation.coords.latitude,
+          lng: gpslocation.coords.longitude,
+        },
+      });
+    } else {
+      Alert.alert("Servicios GPS", "Por favor active los servicios de GPS para continuar.");
+    }
+  };
+
+  setCoordinates = async (lat, lng) => {
+    await this.getPlaceReference(lat, lng).then(async placeName => {
+      if (this.state.usingGps) await this.getUserLocation();
+
+      if (this.state.selectingLocation === "origin") {
+        await this.setState({
+          origin: {
+            name: placeName,
+            lat,
+            lng,
+          },
+          flowStatus: FLOW_STATUS_QUOTING,
+        });
+      } else {
+        await this.setState({
+          destination: {
+            name: placeName,
+            lat,
+            lng,
+          },
+          flowStatus: FLOW_STATUS_QUOTING,
+        });
+      }
+
+      await this.getPoly();
+    });
+  };
+
+  setMarkerLocations = async (lat, lng) => {
+    await this.setCoordinates(lat, lng);
     let markers = [];
-    marketlocation.persist();
+
     markers.push(
       <MapView.Marker
-        key={marketlocation.timeStamp}
+        key={"origin"}
         coordinate={{
-          latitude: marketlocation.nativeEvent.coordinate.latitude,
-          longitude: marketlocation.nativeEvent.coordinate.longitude,
+          latitude: this.state.origin.lat,
+          longitude: this.state.origin.lng,
         }}
-        title={"Ir a esta dirección"}
-        description={"Marcador manual"}
-        pincolor="red"
-        onPress={async () => {
-          if (this.state.flowStatus === FLOW_STATUS_NONE) {
-            if (this.state.usingGps) {
-              let location = await Location.getProviderStatusAsync();
-
-              if (location.gpsAvailable) {
-                let gpslocation = await Location.getCurrentPositionAsync({});
-
-                await this.setState({
-                  origin: {
-                    lat: gpslocation.coords.latitude,
-                    lng: gpslocation.coords.longitude,
-                  },
-                  destination: {
-                    name: "Marcador",
-                    lat: marketlocation.nativeEvent.coordinate.latitude,
-                    lng: marketlocation.nativeEvent.coordinate.longitude,
-                  },
-                  flowStatus: FLOW_STATUS_QUOTING,
-                });
-
-                await this.getPoly();
-              } else {
-                Alert.alert(
-                  "Servicios GPS",
-                  "Por favor active los servicios de GPS para continuar."
-                );
-              }
-            } else {
-              if (this.state.selectingLocation == "origin") {
-                await this.setState({
-                  origin: {
-                    name: "Marcador",
-                    lat: marketlocation.nativeEvent.coordinate.latitude,
-                    lng: marketlocation.nativeEvent.coordinate.longitude,
-                  },
-                  flowStatus: FLOW_STATUS_QUOTING,
-                });
-              } else {
-                await this.setState({
-                  destination: {
-                    name: "Marcador",
-                    lat: marketlocation.nativeEvent.coordinate.latitude,
-                    lng: marketlocation.nativeEvent.coordinate.longitude,
-                  },
-                  flowStatus: FLOW_STATUS_QUOTING,
-                });
-              }
-
-              await this.getPoly();
-            }
-          }
+        title={"Origen"}
+        description={"Te recogeremos en esta dirección"}
+        pinColor={COLOR_BLUE}
+        //draggable={true}
+        /*onDragStart={async () => {
+          await this.setState({ usingGps: false, selectingLocation: "origin" });
+          this.wait();
         }}
+        onDragEnd={(lat, lng) => this.setMarkerLocations(lat, lng)}*/
       />
     );
 
-    this.setState({ markers });
+    markers.push(
+      <MapView.Marker
+        key={"destination"}
+        coordinate={{
+          latitude: this.state.destination.lat,
+          longitude: this.state.destination.lng,
+        }}
+        title={"Destino"}
+        description={"Vamos a esta dirección"}
+        pinColor={COLOR_RED}
+        //onPress={setMarkerLocations}
+        //draggable={true}
+        /*onDragStart={async () => {
+          await this.setState({ usingGps: false, selectingLocation: "destination" });
+          this.wait();
+        }}
+        onDragEnd={(lat, lng) => this.setMarkerLocations(lat, lng)}*/
+      />
+    );
+
+    await this.setState({ markers });
+    this.map.fitToElements(true);
+    //}
+  };
+
+  handleLongPress = async markerLocation => {
+    if (this.state.flowStatus !== FLOW_STATUS_NONE) return;
+    markerLocation.persist();
+    this.wait();
+
+    this.setMarkerLocations(
+      markerLocation.nativeEvent.coordinate.latitude,
+      markerLocation.nativeEvent.coordinate.longitude
+    );
   };
 
   handlePoiClick(location) {
@@ -957,27 +993,27 @@ export default class Home extends React.Component {
         } else {
           masterStyles.searchInactiveAnimation.start();
         }
+
         return (
           <View style={{ flex: 1 }}>
             <MapView
               onLongPress={this.handleLongPress}
               onPoiClick={this.handlePoiClick.bind(this)}
               showsUserLocation={true}
-              followsUserLocation={true}
               ref={component => (this.map = component)}
               style={{ flex: 1 }}
               showsCompass={false}
               initialRegion={INITIAL_REGION}
               mapPadding={{
-                top: Dimensions.get("window").height * 0.11,
-                right: 0,
+                top: Dimensions.get("window").height * 0.09,
+                right: Dimensions.get("window").width * 0.02,
                 bottom: Dimensions.get("window").height * 0.33,
-                left: 0,
+                left: Dimensions.get("window").width * 0.02,
               }}>
               {this.state.markers.map(marker => marker)}
               <MapView.Polyline
                 strokeWidth={4}
-                strokeColor="#03A9F4"
+                strokeColor={COLOR_LIGHTBLUE}
                 coordinates={this.drawPolyline()}
               />
             </MapView>
@@ -988,61 +1024,75 @@ export default class Home extends React.Component {
                   : styles.searchContainer
               }
               elevation={this.state.active ? 2 : 0}>
-              <View elevation={3} style={styles.searchBar}>
-                {this.state.active || this.state.flowStatus != FLOW_STATUS_NONE ? (
+              <Input
+                editable={this.state.flowStatus === FLOW_STATUS_NONE}
+                containerStyle={
+                  this.state.active ? [styles.searchBar, styles.noElevation] : styles.searchBar
+                }
+                inputContainerStyle={styles.searchInput}
+                underlineColorAndroid="transparent"
+                onSubmitEditing={() => {
+                  this.searchPlaces(this.state.busqueda);
+                }}
+                placeholder={
+                  this.state.flowStatus === FLOW_STATUS_NONE
+                    ? "Buscar lugares"
+                    : this.state.destination.name
+                    ? "A " + this.state.destination.name
+                    : "Cafés cerca de Metrópolis"
+                }
+                onFocus={this.activate.bind(this)}
+                onChangeText={busqueda => {
+                  this.autocompleteSearch(busqueda);
+                }}
+                returnKeyType="search"
+                leftIcon={
+                  this.state.active || this.state.flowStatus !== FLOW_STATUS_NONE ? (
+                    <Icon
+                      iconStyle={styles.searchBackIcon}
+                      name="arrow-back"
+                      color="#212121"
+                      size={22}
+                      onPress={this.deactivate}
+                    />
+                  ) : (
+                    <Icon
+                      iconStyle={styles.searchBackIcon}
+                      name="menu"
+                      type="material"
+                      color="#212121"
+                      size={22}
+                      onPress={() => {
+                        this.props.navigation.openDrawer();
+                        console.log("Menu pressed");
+                      }}
+                    />
+                  )
+                }
+                rightIcon={
                   <Icon
-                    style={styles.searchBackIcon}
-                    name="arrow-back"
-                    type="material"
-                    color="#212121"
-                    size={20}
-                    onPress={this.deactivate}
-                  />
-                ) : (
-                  <Icon
-                    style={styles.searchBackIcon}
-                    name="menu"
-                    type="material"
-                    color="#212121"
-                    size={20}
+                    iconStyle={styles.icon}
+                    name="search"
+                    size={25}
+                    color={COLOR_ORANGE}
                     onPress={() => {
-                      this.props.navigation.openDrawer();
-                      console.log("Menu pressed");
+                      if (this.state.active) {
+                        if (this.state.flowStatus === FLOW_STATUS_NONE) {
+                          this.searchPlaces(this.state.busqueda);
+                        } else {
+                          Alert.alert("Error", "Solo puedes pedir un taxi a la vez.");
+                        }
+                        this.deactivate();
+                      } else {
+                        this.activate();
+                      }
                     }}
                   />
-                )}
-                <TextInput
-                  editable={this.state.flowStatus === FLOW_STATUS_NONE}
-                  style={styles.searchInput}
-                  onSubmitEditing={() => {
-                    this.searchPlaces(this.state.busqueda);
-                  }}
-                  placeholder={
-                    this.state.flowStatus === FLOW_STATUS_NONE
-                      ? "Buscar lugares"
-                      : "Esperando respuesta..."
-                  }
-                  onFocus={this.activate.bind(this)}
-                  onChangeText={busqueda => {
-                    this.autocompleteSearch(busqueda);
-                  }}
-                  returnKeyType="search"
-                />
-              </View>
-
-              <View style={styles.iconView} elevation={3} underlayColor="#ffc107">
-                <Ripple
-                  onPress={
-                    this.state.flowStatus === FLOW_STATUS_NONE
-                      ? () => this.searchPlaces(this.state.busqueda)
-                      : () => Alert.alert("Error", "Solo puedes pedir un taxi a la vez.")
-                  }>
-                  <Icon iconStyle={styles.icon} name="search" size={30} color="white" />
-                </Ripple>
-              </View>
+                }
+              />
             </View>
 
-            <Animated.View elevation={1} style={[styles.resultView, animatedStyles.resultView]}>
+            <Animated.View style={[styles.resultView, animatedStyles.resultView]}>
               {this.resultViewContent()}
             </Animated.View>
           </View>

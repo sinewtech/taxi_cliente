@@ -18,31 +18,37 @@ class LogIn extends Component {
     this.state = {
       mail: "",
       password: "",
-      Registrando: false,
+      registrando: false,
     };
   }
+
+  clear = async () => {
+    this.setState({ registrando: false, mail: "", password: "" });
+  };
+
   handleSignIn = async () => {
-    await this.setState({ Registrando: true });
-    let CanContinue = true;
+    await this.setState({ registrando: true });
+    /*let CanContinue = true;
     for (key in this.state) {
       if (this.state[key].length === 0) {
         CanContinue = false;
         break;
       }
-    }
-    if (!CanContinue) {
-      Alert.alert("Error", "Por favor Ingrese sus datos");
-      await this.setState({ Registrando: false });
+    }*/
+
+    if (this.state.mail === "" || this.state.password === "") {
+      Alert.alert("Error", "Por favor llene todos los campos.");
+      await this.clear();
       return;
     } else {
       if (!/^((?!\.)[\w-_.]*[^.])(@\w+)(\.\w+(\.\w+)?[^.\W])$/.test(this.state.mail)) {
         Alert.alert("Correo", "Por favor use un formato de correo valido");
-        await this.setState({ Registrando: false });
+        await this.clear();
         return;
       }
       if (!/^[A-Za-z0-9]{6,}$/.test(this.state.password)) {
         Alert.alert("Contraseña", "Recuerde que la contraseña debe ser mayor a 6 caracteres.");
-        await this.setState({ Registrando: false });
+        await this.clear();
         return;
       }
       firebase
@@ -78,14 +84,16 @@ class LogIn extends Component {
               break;
             }
           }
-          this.setState({ Registrando: false });
+
+          this.clear();
         });
     }
   };
   render() {
-    if (this.state.Registrando) {
+    if (this.state.registrando) {
       return <Waiting />;
     }
+
     return (
       <KeyboardAvoidingView behavior={"padding"} style={styles.SignUpView}>
         <View style={styles.credentialsView}>
