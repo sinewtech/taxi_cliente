@@ -1,9 +1,9 @@
 {
-  "expoServerPort": 19000,
-  "expoServerNgrokUrl": "https://sy-gqs.dmendoza99.taxi-cliente.exp.direct",
-  "packagerNgrokUrl": "https://packager.sy-gqs.dmendoza99.taxi-cliente.exp.direct",
-  "ngrokPid": 11796,
+  "expoServerPort": null,
+  "expoServerNgrokUrl": null,
+  "packagerNgrokUrl": null,
+  "ngrokPid": null,
   "devToolsPort": 19002,
-  "packagerPort": 19001,
-  "packagerPid": 3240
+  "packagerPort": null,
+  "packagerPid": null
 }
