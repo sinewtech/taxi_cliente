@@ -59,7 +59,10 @@ class SignUp extends Component {
           return;
         }
         if (!/^\+504\ \d{4}-\d{4}$/.test(this.state.phone)) {
-          Alert.alert("Numero de teléfono inválido", "Por favor usa el formato de teléfono indicado.");
+          Alert.alert(
+            "Numero de teléfono inválido",
+            "Por favor usa el formato de teléfono indicado."
+          );
           this.setState({ registrando: false });
           return;
         }
@@ -79,7 +82,11 @@ class SignUp extends Component {
                 firstName: this.state.firstName,
                 lastName: this.state.lastName,
                 phone: this.state.phone,
-              }).catch(e => console.error(e));
+              })
+              .catch(e => console.error(e));
+            await data.user.updateProfile({
+              displayName: this.state.firstName + " " + this.state.lastName,
+            });
           })
           .catch(error => {
             switch (error.code) {
@@ -167,7 +174,7 @@ class SignUp extends Component {
           />
         </View>
         <View style={styles.buttonRow}>
-          <Button title="Crear Cuenta" onPress={this.handleRegister} buttonStyle={styles.button}/>
+          <Button title="Crear Cuenta" onPress={this.handleRegister} buttonStyle={styles.button} />
         </View>
       </KeyboardAvoidingView>
     );

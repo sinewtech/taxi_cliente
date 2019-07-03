@@ -18,7 +18,7 @@ import LogOut from "./src/Components/LogOut";
 import { YellowBox, View, ScrollView, Text, StyleSheet } from "react-native";
 import _ from "lodash";
 import { Icon, Avatar, Divider } from "react-native-elements";
-
+import firebase from "./src/firebase";
 YellowBox.ignoreWarnings(["Setting a timer"]);
 const _console = _.clone(console);
 console.warn = message => {
@@ -43,7 +43,9 @@ const drawerContent = props => (
       </View>
       <View style={styles.headerInfo}>
         <Text style={styles.title}>Bienvenido</Text>
-        <Text style={styles.subtitle}>Beta Tester</Text>
+        <Text style={styles.subtitle}>
+          {firebase.auth().currentUser ? firebase.auth().currentUser.displayName : "Nombre"}
+        </Text>
       </View>
     </View>
     <ScrollView>
@@ -110,12 +112,12 @@ const styles = StyleSheet.create({
   drawerHeaderView: {
     height: "20%",
     flexDirection: "row",
-    marginBottom: 10
+    marginBottom: 10,
   },
 
   title: {
     fontSize: 18,
-    fontWeight: "bold"
+    fontWeight: "bold",
   },
 
   subtitle: {
@@ -124,7 +126,7 @@ const styles = StyleSheet.create({
 
   headerInfo: {
     flex: 3,
-    justifyContent: "center"
+    justifyContent: "center",
   },
 
   avatarView: {
@@ -137,8 +139,8 @@ const styles = StyleSheet.create({
 
   avatar: {
     height: 25,
-    width: 25
-  }
+    width: 25,
+  },
 });
 
 export default App;
