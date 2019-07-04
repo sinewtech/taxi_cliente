@@ -253,8 +253,9 @@ export class FlowTerminado extends React.Component {
 }
 
 export class FlowRating extends React.Component {
-  ratingCompleted = data => {
-    console.log(data);
+  handleRate = async (rate, cual) => {
+    await this.setState({ [cual]: rate });
+    console.log(this.state);
   };
   render() {
     return (
@@ -263,19 +264,38 @@ export class FlowRating extends React.Component {
           <Icon name="question-answer" size={70} color="#4CAF50" />
         </View>
         <Text style={styles.displayTitle} flex={1}>
-          ¿Que te ha parecido tu conductor?
+          ¿Que tal ha sido tu experiencia?
         </Text>
-        <View
-          style={{
-            shadowColor: "#888888",
-            shadowOffset: 2,
-            shadowRadius: 4,
-            shadowOpacity: 1,
-          }}>
-          <Text>Presentacion del auto</Text>
-          <Divider />
-          <AirbnbRating count={5} reviews={["Malo", "Meh", "OK", "Bueno", "Excelente"]} size={20} />
-        </View>
+        <AirbnbRating
+          count={5}
+          onFinishRating={rating => this.handleRate(rating, "Limpieza")}
+          reviews={["Malo", "Meh", "OK", "Bueno", "Excelente"]}
+          size={20}
+        />
+        <AirbnbRating
+          count={5}
+          onFinishRating={rating => this.handleRate(rating, "Presentacion")}
+          reviews={["Malo", "Meh", "OK", "Bueno", "Excelente"]}
+          size={20}
+        />
+        <AirbnbRating
+          count={5}
+          onFinishRating={rating => this.handleRate(rating, "Amabilidad")}
+          reviews={["Malo", "Meh", "OK", "Bueno", "Excelente"]}
+          size={20}
+        />
+        <AirbnbRating
+          count={5}
+          onFinishRating={rating => this.handleRate(rating, "Manejo")}
+          reviews={["Malo", "Meh", "OK", "Bueno", "Excelente"]}
+          size={20}
+        />
+        <AirbnbRating
+          count={5}
+          onFinishRating={rating => this.handleRate(rating, "Puntualidad")}
+          reviews={["Malo", "Meh", "OK", "Bueno", "Excelente"]}
+          size={20}
+        />
         <BottomButton onPress={this.props.dismiss} title="Cerrar" backgroundColor="#4CAF50" />
       </View>
     );
