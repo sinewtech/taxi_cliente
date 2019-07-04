@@ -37,6 +37,7 @@ export const FLOW_STATUS_BOARDING = 6;
 export const FLOW_STATUS_TRAVELLING = 7;
 export const FLOW_STATUS_ARRIVED = 8;
 export const FLOW_STATUS_NO_RESULTS = 9;
+export const FLOW_STATUS_RATING = 10;
 export const FLOW_STATUS_ERROR = -1;
 
 export const NOTIFICATION_QUOTE = 1;

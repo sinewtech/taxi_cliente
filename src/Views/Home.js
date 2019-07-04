@@ -35,6 +35,7 @@ import {
   FlowViajando,
   FlowTerminado,
   FlowNoEncontrado,
+  FlowRating,
 } from "../Components/Flow.js";
 import { TouchableNativeFeedback } from "react-native-gesture-handler";
 
@@ -98,7 +99,8 @@ export default class Home extends React.Component {
     //Inicializar el estado
     this.state = {
       active: false,
-      flowStatus: Constants.FLOW_STATUS_NONE,
+      // flowStatus: Constants.FLOW_STATUS_NONE,
+      flowStatus: Constants.FLOW_STATUS_RATING,
 
       userUid: "0",
       user: "waiting",
@@ -759,6 +761,8 @@ export default class Home extends React.Component {
           return (
             <FlowNoEncontrado dismiss={this.setState({ flowStatus: Constants.FLOW_STATUS_NONE })} />
           );
+        case Constants.FLOW_STATUS_RATING:
+          return <FlowRating />;
         default:
           break;
       }

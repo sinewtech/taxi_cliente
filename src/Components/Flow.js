@@ -5,6 +5,7 @@ import BottomButton from "./BottomButton";
 import ImageViewer from "react-native-image-zoom-viewer";
 import firebase from "firebase";
 import "@firebase/firestore";
+import { Rating, AirbnbRating } from "react-native-ratings";
 
 export class FlowCotizar extends React.Component {
   render() {
@@ -127,11 +128,7 @@ export class FlowNoEncontrado extends React.Component {
         <Text style={styles.disclaimer} flex={1}>
           Puedes intentar usando otro término de búsqueda.
         </Text>
-        <BottomButton
-          backgroundColor="#4CAF50"
-          title="Regresar"
-          onPress={this.props.onConfirm}
-        />
+        <BottomButton backgroundColor="#4CAF50" title="Regresar" onPress={this.props.onConfirm} />
       </View>
     );
   }
@@ -249,6 +246,36 @@ export class FlowTerminado extends React.Component {
         <Text style={styles.displayTitle} flex={1}>
           Gracias por viajar con nosotros.
         </Text>
+        <BottomButton onPress={this.props.dismiss} title="Cerrar" backgroundColor="#4CAF50" />
+      </View>
+    );
+  }
+}
+
+export class FlowRating extends React.Component {
+  ratingCompleted = data => {
+    console.log(data);
+  };
+  render() {
+    return (
+      <View style={styles.mainViewPaddingless}>
+        <View flex={2}>
+          <Icon name="question-answer" size={70} color="#4CAF50" />
+        </View>
+        <Text style={styles.displayTitle} flex={1}>
+          ¿Que te ha parecido tu conductor?
+        </Text>
+        <View
+          style={{
+            shadowColor: "#888888",
+            shadowOffset: 2,
+            shadowRadius: 4,
+            shadowOpacity: 1,
+          }}>
+          <Text>Presentacion del auto</Text>
+          <Divider />
+          <AirbnbRating count={5} reviews={["Malo", "Meh", "OK", "Bueno", "Excelente"]} size={20} />
+        </View>
         <BottomButton onPress={this.props.dismiss} title="Cerrar" backgroundColor="#4CAF50" />
       </View>
     );
