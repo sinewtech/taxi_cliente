@@ -442,6 +442,7 @@ export default class Home extends React.Component {
 
   _handleNotification = notification => {
     // Notifications.dismissAllNotificationsAsync();
+    console.log("notification id", notification.data.id);
     switch (notification.data.id) {
       case Constants.NOTIFICATION_QUOTE: {
         console.log("Quote recibida: ", notification);
@@ -457,6 +458,13 @@ export default class Home extends React.Component {
       }
       case Constants.NOTIFICATION_BOARDING: {
         this.setState({ flowStatus: Constants.FLOW_STATUS_BOARDING });
+      }
+      case Constants.NOTIFICATION_RATING: {
+        this.setState({
+          flowStatus: Constants.FLOW_STATUS_RATING,
+          ratingOrderUid: notification.data.orderdata.orderUid,
+          drivername: notification.data.orderdata.driverName,
+        });
       }
     }
   };

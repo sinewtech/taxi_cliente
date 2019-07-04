@@ -42,6 +42,7 @@ export const FLOW_STATUS_ERROR = -1;
 
 export const NOTIFICATION_QUOTE = 1;
 export const NOTIFICATION_BOARDING = 2;
+export const NOTIFICATION_RATING = 3;
 //Mapas
 export const MAPS_API_KEY = "AIzaSyApNgtxFBp0SXSHljP_xku6peNCzjTFWM4";
 
