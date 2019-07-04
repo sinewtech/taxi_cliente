@@ -77,7 +77,7 @@ async function registerForPushNotificationsAsync() {
       sound: true,
     });
   }
-  
+
   let token = "_";
 
   try {
@@ -95,7 +95,7 @@ export default class Home extends React.Component {
   constructor(props) {
     super(props);
 
-    //Inicializar el estado 
+    //Inicializar el estado
     this.state = {
       active: false,
       flowStatus: Constants.FLOW_STATUS_NONE,
@@ -143,7 +143,10 @@ export default class Home extends React.Component {
     let { status } = await Permissions.askAsync(Permissions.LOCATION);
 
     if (status !== "granted") {
-      Alert.alert("Servicios GPS", "Para que el app funcione correctamente, debe permitir el uso del gps.");
+      Alert.alert(
+        "Servicios GPS",
+        "Para que el app funcione correctamente, debe permitir el uso del gps."
+      );
     }
   };
 
@@ -172,15 +175,15 @@ export default class Home extends React.Component {
     }
   };
 
-  goToUserLocation = async (ask) => {
+  goToUserLocation = async ask => {
     if (this.map) {
       if (ask) await this._getLocationAsync();
       this.map.animateToRegion({
         latitude: this.state.location.coords.latitude,
         longitude: this.state.location.coords.longitude,
         latitudeDelta: 0.02,
-        longitudeDelta: 0.02
-      })
+        longitudeDelta: 0.02,
+      });
     }
   };
 
@@ -241,7 +244,12 @@ export default class Home extends React.Component {
           responseJson.results.map(candidate => {
             cont++;
 
-            if (!Constants.pointIsInSearchRange(candidate.geometry.location.lat, candidate.geometry.location.lng))
+            if (
+              !Constants.pointIsInSearchRange(
+                candidate.geometry.location.lat,
+                candidate.geometry.location.lng
+              )
+            )
               return;
 
             markers.push(
@@ -253,7 +261,11 @@ export default class Home extends React.Component {
                 }}
                 title={candidate.name}
                 description={candidate.formatted_address}
-                pinColor={this.state.selectingLocation === Constants.LOCATION_ORIGIN ? Constants.COLOR_BLUE : Constants.COLOR_RED}
+                pinColor={
+                  this.state.selectingLocation === Constants.LOCATION_ORIGIN
+                    ? Constants.COLOR_BLUE
+                    : Constants.COLOR_RED
+                }
                 onPress={async () => {
                   this.placeDetails(candidate.place_id);
                 }}
@@ -318,7 +330,10 @@ export default class Home extends React.Component {
     console.log("Recuperando detalles para", this.state.selectingLocation, query);
 
     fetch(
-      "https://maps.googleapis.com/maps/api/place/details/json?key=" + Constants.MAPS_API_KEY + "&placeid=" + query
+      "https://maps.googleapis.com/maps/api/place/details/json?key=" +
+        Constants.MAPS_API_KEY +
+        "&placeid=" +
+        query
     )
       .then(response => response.json())
       .then(async responseJson => {
@@ -426,7 +441,7 @@ export default class Home extends React.Component {
   _handleNotification = notification => {
     // Notifications.dismissAllNotificationsAsync();
     switch (notification.data.id) {
-      case 1: {
+      case Constants.NOTIFICATION_QUOTE: {
         console.log("Quote recibida: ", notification);
         this.setState({
           quote: {
@@ -438,7 +453,7 @@ export default class Home extends React.Component {
 
         break;
       }
-      case 2: {
+      case Constants.NOTIFICATION_BOARDING: {
         this.setState({ flowStatus: Constants.FLOW_STATUS_BOARDING });
       }
     }
@@ -737,9 +752,13 @@ export default class Home extends React.Component {
         case Constants.FLOW_STATUS_TRAVELLING:
           return <FlowViajando panic={this.cancelOrder} />;
         case Constants.FLOW_STATUS_ARRIVED:
-          return <FlowTerminado dismiss={this.setState({ flowStatus: Constants.FLOW_STATUS_NONE })} />;
+          return (
+            <FlowTerminado dismiss={this.setState({ flowStatus: Constants.FLOW_STATUS_NONE })} />
+          );
         case Constants.FLOW_STATUS_NO_RESULTS:
-          return <FlowNoEncontrado dismiss={this.setState({ flowStatus: Constants.FLOW_STATUS_NONE })} />;
+          return (
+            <FlowNoEncontrado dismiss={this.setState({ flowStatus: Constants.FLOW_STATUS_NONE })} />
+          );
         default:
           break;
       }
@@ -929,7 +948,10 @@ export default class Home extends React.Component {
   };
 
   handleLongPress = async markerLocation => {
-    if (this.state.flowStatus !== Constants.FLOW_STATUS_NONE && this.state.flowStatus !== Constants.FLOW_STATUS_QUOTING)
+    if (
+      this.state.flowStatus !== Constants.FLOW_STATUS_NONE &&
+      this.state.flowStatus !== Constants.FLOW_STATUS_QUOTING
+    )
       return;
 
     if (
@@ -995,7 +1017,7 @@ export default class Home extends React.Component {
         return <Waiting />;
       } else {
         let text = "Waiting..";
-        
+
         if (this.state.location) {
           text = JSON.stringify(this.state.location);
         }
@@ -1051,9 +1073,7 @@ export default class Home extends React.Component {
               <Input
                 editable={this.state.flowStatus === Constants.FLOW_STATUS_NONE}
                 containerStyle={
-                  this.state.active
-                    ? [styles.searchBar, styles.noElevation]
-                    : styles.searchBar
+                  this.state.active ? [styles.searchBar, styles.noElevation] : styles.searchBar
                 }
                 inputContainerStyle={styles.searchInput}
                 underlineColorAndroid="transparent"

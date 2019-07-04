@@ -39,6 +39,8 @@ export const FLOW_STATUS_ARRIVED = 8;
 export const FLOW_STATUS_NO_RESULTS = 9;
 export const FLOW_STATUS_ERROR = -1;
 
+export const NOTIFICATION_QUOTE = 1;
+export const NOTIFICATION_BOARDING = 2;
 //Mapas
 export const MAPS_API_KEY = "AIzaSyApNgtxFBp0SXSHljP_xku6peNCzjTFWM4";
 
