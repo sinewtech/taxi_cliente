@@ -21,6 +21,7 @@
     "react-native-maps": "^0.24.2",
     "react-native-masked-text": "^1.12.3",
     "react-native-material-ripple": "^0.8.0",
+    "react-native-ratings": "^6.3.1",
     "react-navigation": "^3.11.0"
   },
   "devDependencies": {
