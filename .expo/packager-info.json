@@ -1,4 +1,5 @@
 {
+<<<<<<< Updated upstream
   "expoServerPort": 19003,
   "expoServerNgrokUrl": "https://sy-gqs.dmendoza99.taxi-cliente.exp.direct",
   "packagerNgrokUrl": "https://packager.sy-gqs.dmendoza99.taxi-cliente.exp.direct",
@@ -6,4 +7,13 @@
   "devToolsPort": 19002,
   "packagerPort": 19004,
   "packagerPid": 14960
+=======
+  "expoServerPort": 19000,
+  "expoServerNgrokUrl": "https://sy-gqs.anonymous.taxi-cliente.exp.direct",
+  "packagerNgrokUrl": "https://packager.sy-gqs.anonymous.taxi-cliente.exp.direct",
+  "ngrokPid": 10336,
+  "devToolsPort": 19002,
+  "packagerPort": 19001,
+  "packagerPid": 16560
+>>>>>>> Stashed changes
 }
