@@ -457,6 +457,8 @@ export default class Home extends React.Component {
   _handleNotification = notification => {
     // Notifications.dismissAllNotificationsAsync();
     console.log("notification id", notification.data.id);
+    console.log("notification data", notification.data);
+
     switch (notification.data.id) {
       case Constants.NOTIFICATION_QUOTE: {
         console.log("Quote recibida: ", notification);
@@ -470,15 +472,19 @@ export default class Home extends React.Component {
 
         break;
       }
+      
       case Constants.NOTIFICATION_BOARDING: {
         this.setState({ flowStatus: Constants.FLOW_STATUS_BOARDING });
+        break;
       }
+
       case Constants.NOTIFICATION_RATING: {
         this.setState({
           flowStatus: Constants.FLOW_STATUS_RATING,
           ratingOrderUid: notification.data.orderdata.orderUid,
           drivername: notification.data.orderdata.driverName,
         });
+        break;
       }
     }
   };
@@ -1108,7 +1114,7 @@ export default class Home extends React.Component {
                 }}
                 placeholder={
                   this.state.flowStatus === Constants.FLOW_STATUS_NONE
-                    ? "Buscar places"
+                    ? "Buscar lugares"
                     : this.state.destination.name
                     ? "A " + this.state.destination.name
                     : "Cafés cerca de Metrópolis"
