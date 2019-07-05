@@ -175,7 +175,45 @@ export default class Home extends React.Component {
                   let order = datasnap.exportVal();
                   if (order.userUid === doc.id) {
                     if (order.status !== 7 && order.status !== 6 && order.status !== -1) {
-                      console.log("sigue :v", order.status);
+                      console.log(datasnap.key, order.status);
+                      if (order.status === 0) {
+                        this.setState({
+                          quote: order,
+                          destination: order.destination,
+                          currentOrder: datasnap.key,
+                          flowStatus: 2,
+                        });
+                      } else if (order.status === 1) {
+                        this.setState({
+                          quote: {
+                            precio: order.price,
+                          },
+                          origin: order.origin,
+                          destination: order.destination,
+                          currentOrder: datasnap.key,
+                          flowStatus: 4,
+                        });
+                      } else if (order.status === 2 || order.status === 3) {
+                        this.setState({
+                          quote: {
+                            precio: order.price,
+                          },
+                          origin: order.origin,
+                          destination: order.destination,
+                          currentOrder: datasnap.key,
+                          flowStatus: 5,
+                        });
+                      } else if (order.status === 5) {
+                        this.setState({
+                          quote: {
+                            precio: order.price,
+                          },
+                          origin: order.origin,
+                          destination: order.destination,
+                          currentOrder: datasnap.key,
+                          flowStatus: 6,
+                        });
+                      }
                     }
                   }
                 });
@@ -472,7 +510,7 @@ export default class Home extends React.Component {
 
         break;
       }
-      
+
       case Constants.NOTIFICATION_BOARDING: {
         this.setState({ flowStatus: Constants.FLOW_STATUS_BOARDING });
         break;
@@ -744,6 +782,7 @@ export default class Home extends React.Component {
     );
 
     if (this.state.flowStatus != Constants.FLOW_STATUS_NONE) {
+      console.log("el flow esta en este", this.state.flowStatus);
       switch (this.state.flowStatus) {
         case Constants.FLOW_STATUS_QUOTING:
           return (
