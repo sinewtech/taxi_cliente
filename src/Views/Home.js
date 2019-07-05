@@ -166,6 +166,20 @@ export default class Home extends React.Component {
         .then(doc => {
           if (doc.exists) {
             this.setState({ userData: doc.data() });
+            firebase
+              .database()
+              .ref()
+              .child("quotes/")
+              .once("value", snap => {
+                snap.forEach(datasnap => {
+                  let order = datasnap.exportVal();
+                  if (order.userUid === doc.id) {
+                    if (order.status !== 7 && order.status !== 6 && order.status !== -1) {
+                      console.log("sigue :v", order.status);
+                    }
+                  }
+                });
+              });
           } else {
             // doc.data() va a ser indefinido en este caso
             console.log("No se encontraron los datos del usuario.");
