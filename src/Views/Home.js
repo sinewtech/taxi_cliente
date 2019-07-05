@@ -829,7 +829,7 @@ export default class Home extends React.Component {
             <FlowNoEncontrado dismiss={this.setState({ flowStatus: Constants.FLOW_STATUS_NONE })} />
           );
         case Constants.FLOW_STATUS_RATING:
-          return <FlowRating />;
+          return <FlowRating orderUid={this.state.ratingOrderUid} />;
         default:
           break;
       }

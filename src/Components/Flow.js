@@ -1,11 +1,11 @@
 import React from "react";
-import { Text, View, StyleSheet, TouchableOpacity, Modal, BackHandler } from "react-native";
+import { Text, View, StyleSheet, TouchableOpacity, Modal, Alert } from "react-native";
 import { Icon, Divider } from "react-native-elements";
 import BottomButton from "./BottomButton";
 import ImageViewer from "react-native-image-zoom-viewer";
 import firebase from "firebase";
 import "@firebase/firestore";
-import { Rating, AirbnbRating } from "react-native-ratings";
+import { AirbnbRating } from "react-native-ratings";
 
 export class FlowCotizar extends React.Component {
   render() {
@@ -257,6 +257,46 @@ export class FlowRating extends React.Component {
     await this.setState({ [cual]: rate });
     console.log(this.state);
   };
+  sendRate = () => {
+    let fieldsAreValid = true;
+    for (key in this.state) {
+      if (this.state[key].length === 0) {
+        fieldsAreValid = false;
+        break;
+      }
+    }
+    if (fieldsAreValid) {
+      let finalprom =
+        this.state.Limpieza +
+        this.state.Presentacion +
+        this.state.Amabilidad +
+        this.state.Manejo +
+        this.state.Puntualidad;
+      finalprom = finalprom / 5;
+      firebase
+        .database()
+        .ref()
+        .child("quotes/" + this.props.orderUid + "/")
+        .once("value", snap => {
+          let order = snap.exportVal();
+          firebase
+            .firestore()
+            .collection("ratings")
+            .add({
+              cleaning: this.state.Limpieza,
+              presentation: this.state.Presentacion,
+              amiability: this.state.Amabilidad,
+              driving: this.state.Manejo,
+              puntuality: this.state.Puntualidad,
+              finalprom: finalprom,
+              orderUid: snap.key,
+              driverUid: order.driver,
+            });
+        });
+    } else {
+      Alert.alert("Calificaciones", "Por favor termina de calificar a tu conductor");
+    }
+  };
   render() {
     return (
       <View style={styles.mainViewPaddingless}>
@@ -296,7 +336,7 @@ export class FlowRating extends React.Component {
           reviews={["Malo", "Meh", "OK", "Bueno", "Excelente"]}
           size={20}
         />
-        <BottomButton onPress={this.props.dismiss} title="Cerrar" backgroundColor="#4CAF50" />
+        <BottomButton onPress={this.sendRate} title="Cerrar" backgroundColor="#4CAF50" />
       </View>
     );
   }
