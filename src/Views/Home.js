@@ -99,8 +99,8 @@ export default class Home extends React.Component {
     //Inicializar el estado
     this.state = {
       active: false,
-      flowStatus: Constants.FLOW_STATUS_NONE,
-      // flowStatus: Constants.FLOW_STATUS_RATING,
+      // flowStatus: Constants.FLOW_STATUS_NONE,
+      flowStatus: Constants.FLOW_STATUS_RATING,
 
       userUid: "0",
       user: "waiting",
