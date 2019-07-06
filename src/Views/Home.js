@@ -99,8 +99,8 @@ export default class Home extends React.Component {
     //Inicializar el estado
     this.state = {
       active: false,
-      // flowStatus: Constants.FLOW_STATUS_NONE,
-      flowStatus: Constants.FLOW_STATUS_RATING,
+      flowStatus: Constants.FLOW_STATUS_NONE,
+      //flowStatus: Constants.FLOW_STATUS_RATING,
 
       userUid: "0",
       user: "waiting",
@@ -573,7 +573,7 @@ export default class Home extends React.Component {
     Keyboard.dismiss();
   };
 
-  activate() {
+  activate = () => {
     this.setState({
       active: true,
       flowStatus: Constants.FLOW_STATUS_NONE,
@@ -829,7 +829,7 @@ export default class Home extends React.Component {
             <FlowNoEncontrado dismiss={this.setState({ flowStatus: Constants.FLOW_STATUS_NONE })} />
           );
         case Constants.FLOW_STATUS_RATING:
-          this.activate();
+          if (!this.state.active) this.setState({active: true});
           return <FlowRating orderUid={this.state.ratingOrderUid} />;
         default:
           break;

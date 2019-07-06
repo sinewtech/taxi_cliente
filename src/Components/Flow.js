@@ -1,11 +1,11 @@
 import React from "react";
-import { Text, View, StyleSheet, TouchableOpacity, Modal, Alert } from "react-native";
+import { Text, View, ScrollView, StyleSheet, TouchableOpacity, Modal, Alert } from "react-native";
 import { Icon, Divider } from "react-native-elements";
 import BottomButton from "./BottomButton";
 import ImageViewer from "react-native-image-zoom-viewer";
 import firebase from "firebase";
 import "@firebase/firestore";
-import { AirbnbRating } from "react-native-ratings";
+import Rating from "./Rating";
 
 export class FlowCotizar extends React.Component {
   render() {
@@ -299,45 +299,31 @@ export class FlowRating extends React.Component {
   };
   render() {
     return (
-      <View style={styles.mainViewPaddingless}>
-        <View flex={2}>
+      <ScrollView contentContainerStyle={styles.mainViewPaddingless}>
+        <View flex={1}>
           <Icon name="question-answer" size={70} color="#4CAF50" />
         </View>
-        <Text style={styles.displayTitle} flex={1}>
+        <Text style={styles.displayTitle} flex={2}>
           ¿Que tal ha sido tu experiencia?
         </Text>
-        <AirbnbRating
-          count={5}
-          onFinishRating={rating => this.handleRate(rating, "Limpieza")}
-          reviews={["Malo", "Meh", "OK", "Bueno", "Excelente"]}
-          size={20}
-        />
-        <AirbnbRating
-          count={5}
-          onFinishRating={rating => this.handleRate(rating, "Presentacion")}
-          reviews={["Malo", "Meh", "OK", "Bueno", "Excelente"]}
-          size={20}
-        />
-        <AirbnbRating
-          count={5}
-          onFinishRating={rating => this.handleRate(rating, "Amabilidad")}
-          reviews={["Malo", "Meh", "OK", "Bueno", "Excelente"]}
-          size={20}
-        />
-        <AirbnbRating
-          count={5}
-          onFinishRating={rating => this.handleRate(rating, "Manejo")}
-          reviews={["Malo", "Meh", "OK", "Bueno", "Excelente"]}
-          size={20}
-        />
-        <AirbnbRating
-          count={5}
-          onFinishRating={rating => this.handleRate(rating, "Puntualidad")}
-          reviews={["Malo", "Meh", "OK", "Bueno", "Excelente"]}
-          size={20}
-        />
+        <View style={styles.ratingsView}>
+          <Rating name="Limpieza" title="Limpieza de la Unidad" handleRate={this.handleRate} />
+          <Rating name="Amabilidad" title="Amabilidad del Conductor" handleRate={this.handleRate} />
+          <Rating name="Manejo" title="Manejo del Conductor" handleRate={this.handleRate} />
+          <Rating
+            name="Puntualidad"
+            title="Puntualidad del Conductor"
+            handleRate={this.handleRate}
+          />
+        </View>
+
+        {/*
+
+        Aquí que vayan comentarios del cliente.
+
+      */}
         <BottomButton onPress={this.sendRate} title="Cerrar" backgroundColor="#4CAF50" />
-      </View>
+      </ScrollView>
     );
   }
 }
@@ -453,6 +439,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flex: 1,
     padding: 15,
+  },
+
+  ratingsView: {
+    flex: 6,
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "space-around"
   },
 
   displayTitle: {
