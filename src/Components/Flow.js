@@ -261,6 +261,16 @@ export class FlowTerminado extends React.Component {
 }
 
 export class FlowRating extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      Limpieza: 3,
+      Amabilidad: 3,
+      Manejo: 3,
+      Puntualidad: 3,
+      Presentacion: 3,
+    };
+  }
   handleRate = async (rate, cual) => {
     await this.setState({ [cual]: rate });
     console.log(this.state);
@@ -281,30 +291,36 @@ export class FlowRating extends React.Component {
         this.state.Manejo +
         this.state.Puntualidad;
       finalprom = finalprom / 5;
+
       firebase
         .database()
         .ref()
         .child("quotes/" + this.props.orderUid + "/")
         .once("value", snap => {
           let order = snap.exportVal();
+          let finalData = {
+            cleaning: this.state.Limpieza,
+            presentation: this.state.Presentacion,
+            amiability: this.state.Amabilidad,
+            driving: this.state.Manejo,
+            puntuality: this.state.Puntualidad,
+            finalprom: finalprom,
+            orderUid: snap.key,
+            driverUid: order.driver,
+          };
           firebase
             .firestore()
             .collection("ratings")
-            .add({
-              cleaning: this.state.Limpieza,
-              presentation: this.state.Presentacion,
-              amiability: this.state.Amabilidad,
-              driving: this.state.Manejo,
-              puntuality: this.state.Puntualidad,
-              finalprom: finalprom,
-              orderUid: snap.key,
-              driverUid: order.driver,
+            .add(finalData)
+            .then(data => {
+              this.props.deactivate();
             });
         });
     } else {
       Alert.alert("Calificaciones", "Por favor termina de calificar a tu conductor");
     }
   };
+
   render() {
     return (
       <ScrollView contentContainerStyle={styles.mainViewPaddingless}>
@@ -316,6 +332,11 @@ export class FlowRating extends React.Component {
         </Text>
         <View style={styles.ratingsView}>
           <Rating name="Limpieza" title="Limpieza de la Unidad" handleRate={this.handleRate} />
+          <Rating
+            name="Presentacion"
+            title="Presentacion del Conductor"
+            handleRate={this.handleRate}
+          />
           <Rating name="Amabilidad" title="Amabilidad del Conductor" handleRate={this.handleRate} />
           <Rating name="Manejo" title="Manejo del Conductor" handleRate={this.handleRate} />
           <Rating
@@ -330,7 +351,7 @@ export class FlowRating extends React.Component {
         Aquí que vayan comentarios del cliente.
 
       */}
-        <BottomButton onPress={this.sendRate} title="Cerrar" backgroundColor="#4CAF50" />
+        <BottomButton onPress={this.sendRate} title="Evaluar" backgroundColor="#4CAF50" />
       </ScrollView>
     );
   }
@@ -453,7 +474,7 @@ const styles = StyleSheet.create({
     flex: 6,
     width: "100%",
     alignItems: "center",
-    justifyContent: "space-around"
+    justifyContent: "space-around",
   },
 
   displayTitle: {
