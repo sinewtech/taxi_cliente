@@ -6,6 +6,7 @@ import ImageViewer from "react-native-image-zoom-viewer";
 import firebase from "firebase";
 import "@firebase/firestore";
 import Rating from "./Rating";
+import { TouchableNativeFeedback } from "react-native-gesture-handler";
 
 export class FlowCotizar extends React.Component {
   render() {
@@ -199,22 +200,26 @@ export class FlowAbordando extends React.Component {
           Tu taxi está aquí
         </Text>
         <View style={styles.imagesView}>
-          <Image style={{ width: 50, height: 50 }} source={{ uri: this.state.images[0] }} />
-          <Image style={{ width: 50, height: 50 }} source={{ uri: this.state.images[1] }} />
-          <Image style={{ width: 50, height: 50 }} source={{ uri: this.state.images[2] }} />
+          {this.state.images.map(image => {
+            console.log("imagen", image);
+            return (
+              <TouchableNativeFeedback
+                onPress={() => this.setState({ visible: true })}
+                background={TouchableNativeFeedback.SelectableBackground()}>
+                <Image
+                  key={image.url}
+                  style={styles.driverImage}
+                  source={{ uri: image.url }}
+                />
+              </TouchableNativeFeedback>
+            );
+          })}
         </View>
         <Text flex={1}>
           {this.state.driver
             ? this.state.driver.description + " placa " + this.state.driver.plate
             : null}
         </Text>
-        <BottomButton
-          onPress={() => {
-            this.setState({ visible: true });
-          }}
-          title="Ver imagenes de mi conductor"
-          backgroundColor="#f44336"
-        />
         <Modal
           animationType="slide"
           onRequestClose={() => {
@@ -475,6 +480,20 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
     justifyContent: "space-around",
+  },
+
+  imagesView: {
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignContent: "center",
+    flex: 3
+  },
+
+  driverImage: {
+    height: 75,
+    width: 75,
+    resizeMode: "cover",
   },
 
   displayTitle: {
