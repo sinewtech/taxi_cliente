@@ -199,9 +199,9 @@ export class FlowAbordando extends React.Component {
           Tu taxi está aquí
         </Text>
         <View style={styles.imagesView}>
-          <Image style={{width: 50, height: 50}} source={{ uri: this.state.images[0] }} />
-          <Image style={{width: 50, height: 50}} source={{ uri: this.state.images[1] }} />
-          <Image style={{width: 50, height: 50}} source={{ uri: this.state.images[2] }} />
+          <Image style={{ width: 50, height: 50 }} source={{ uri: this.state.images[0] }} />
+          <Image style={{ width: 50, height: 50 }} source={{ uri: this.state.images[1] }} />
+          <Image style={{ width: 50, height: 50 }} source={{ uri: this.state.images[2] }} />
         </View>
         <Text flex={1}>
           {this.state.driver
@@ -313,7 +313,7 @@ export class FlowRating extends React.Component {
             .collection("ratings")
             .add(finalData)
             .then(data => {
-              this.props.deactivate();
+              this.props.dismiss();
             });
         });
     } else {

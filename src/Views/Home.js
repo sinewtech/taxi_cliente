@@ -832,7 +832,15 @@ export default class Home extends React.Component {
           );
         case Constants.FLOW_STATUS_RATING:
           if (!this.state.active) this.setState({ active: true });
-          return <FlowRating deactivate={this.deactivate} orderUid={this.state.ratingOrderUid} />;
+          return (
+            <FlowRating
+              dismiss={() => {
+                this.deactivate();
+                this.clear();
+              }}
+              orderUid={this.state.ratingOrderUid}
+            />
+          );
         default:
           break;
       }
