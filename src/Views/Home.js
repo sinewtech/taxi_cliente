@@ -564,7 +564,10 @@ export default class Home extends React.Component {
   }
 
   deactivate = () => {
-    if (this.state.flowStatus === Constants.FLOW_STATUS_NONE) {
+    if (
+      this.state.flowStatus === Constants.FLOW_STATUS_NONE ||
+      this.state.flowStatus === Constants.FLOW_STATUS_RATING
+    ) {
       this.setState({ active: false, flowStatus: Constants.FLOW_STATUS_NONE });
     } else {
       this.cancelOrder();

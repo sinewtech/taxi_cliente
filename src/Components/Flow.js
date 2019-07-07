@@ -1,6 +1,6 @@
 import React from "react";
 import { Text, View, ScrollView, StyleSheet, TouchableOpacity, Modal, Alert } from "react-native";
-import { Icon, Divider } from "react-native-elements";
+import { Icon, Divider, Image } from "react-native-elements";
 import BottomButton from "./BottomButton";
 import ImageViewer from "react-native-image-zoom-viewer";
 import firebase from "firebase";
@@ -166,6 +166,7 @@ export class FlowAbordando extends React.Component {
       visible: false,
     };
   }
+
   componentDidMount = async () => {
     await firebase
       .database()
@@ -186,7 +187,7 @@ export class FlowAbordando extends React.Component {
               { url: driverdata.lateralcar },
               { url: driverdata.profilecar },
             ];
-            this.setState({ images });
+            this.setState({ images, driver: driverdata });
           });
       });
   };
@@ -197,8 +198,15 @@ export class FlowAbordando extends React.Component {
         <Text style={styles.displayTitle} flex={1}>
           Tu taxi está aquí
         </Text>
-        <Text style={styles.disclaimer} flex={1}>
-          Info del taxi va acá
+        <View style={styles.imagesView}>
+          <Image style={{width: 50, height: 50}} source={{ uri: this.state.images[0] }} />
+          <Image style={{width: 50, height: 50}} source={{ uri: this.state.images[1] }} />
+          <Image style={{width: 50, height: 50}} source={{ uri: this.state.images[2] }} />
+        </View>
+        <Text flex={1}>
+          {this.state.driver
+            ? this.state.driver.description + " placa " + this.state.driver.plate
+            : null}
         </Text>
         <BottomButton
           onPress={() => {
