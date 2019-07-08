@@ -38,7 +38,7 @@ import {
   FlowRating,
 } from "../Components/Flow.js";
 import { TouchableNativeFeedback } from "react-native-gesture-handler";
-
+import { ShakeEventExpo } from "../Components/ShakeEvent";
 let masterStyles = require("../../styles.js");
 let styles = masterStyles.styles;
 let animatedStyles = masterStyles.animatedStyles;
@@ -141,6 +141,10 @@ export default class Home extends React.Component {
   }
 
   componentDidMount = async () => {
+    ShakeEventExpo.addListener(() => {
+      Alert.alert("Shaking!!!");
+      console.log("corrio");
+    });
     let { status } = await Permissions.askAsync(Permissions.LOCATION);
 
     if (status !== "granted") {
