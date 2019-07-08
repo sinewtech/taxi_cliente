@@ -122,6 +122,10 @@ export default class Home extends React.Component {
       directions: [],
       polyline: [],
 
+      duration: "0 min",
+      driverDirections: {},
+      driverPolyline: [],
+
       quote: {
         mensaje: "Cotización",
         precio: 0.0,
@@ -196,6 +200,7 @@ export default class Home extends React.Component {
                           currentOrder: datasnap.key,
                           flowStatus: 4,
                         });
+                        this.getDriverTime();
                       } else if (order.status === 2 || order.status === 3) {
                         this.setState({
                           quote: {
@@ -206,6 +211,7 @@ export default class Home extends React.Component {
                           currentOrder: datasnap.key,
                           flowStatus: 5,
                         });
+                        this.getDriverTime();
                       } else if (order.status === 5) {
                         this.setState({
                           quote: {
@@ -216,6 +222,7 @@ export default class Home extends React.Component {
                           currentOrder: datasnap.key,
                           flowStatus: 6,
                         });
+                        this.getDriverTime();
                       }
                     }
                   }
@@ -503,6 +510,7 @@ export default class Home extends React.Component {
     switch (notification.data.id) {
       case Constants.NOTIFICATION_QUOTE: {
         console.log("Quote recibida: ", notification);
+
         this.setState({
           quote: {
             mensaje: notification.data.mensaje,
@@ -530,6 +538,82 @@ export default class Home extends React.Component {
     }
   };
 
+  getDriverDirections = async () => {
+    let lat = 0.0;
+    let lng = 0.0;
+    await firebase
+      .database()
+      .ref()
+      .child("/quotes/" + this.state.currentOrder + "/driver/")
+      .once("value", driverUid => {
+        let driver = driverUid.exportVal();
+        console.log("DRIVER UID = " + driver);
+        firebase
+          .database()
+          .ref()
+          .child("/locations/" + driver + "/position/")
+          .once("value", async driverLocation => {
+            let driverLoc = driverLocation.exportVal();
+            lat = await driverLoc.lat;
+            lng = await driverLoc.lng;
+            console.log("DRIVER LAT = " + lat);
+            console.log("DRIVER LNG = " + lng);
+            console.log("lat1 = " + lat);
+            console.log("lng1 = " + lng);
+            console.log("lat1 = " + this.state.origin.lat);
+            console.log("lng1 = " + this.state.origin.lng);
+            await fetch(
+              "https://maps.googleapis.com/maps/api/directions/json?key=" +
+                Constants.MAPS_API_KEY +
+                "&origin=" +
+                lat +
+                "," +
+                lng +
+                "&destination=" +
+                this.state.origin.lat +
+                "," +
+                this.state.origin.lng +
+                "&departure_time=now"
+            )
+              .then(response => response.json())
+              .then(resp => {
+                //console.log(JSON.stringify(resp));
+                if (resp.status == "OK") {
+                  this.setState({ driverDirections: resp.routes[0] });
+                  return this.state.driverDirections;
+                } else {
+                  console.log("Error fetch tiempo conductor");
+                  console.log("lat2 = " + lat);
+                  console.log("lng2 = " + lng);
+                  console.log("lat2 = " + this.state.origin.lat);
+                  console.log("lng2 = " + this.state.origin.lng);
+                }
+              });
+          });
+      });
+  };
+
+  getDriverTime = async () => {
+    let directions;
+    this.state.driverDirections.legs
+      ? (directions = await this.state.driverDirections)
+      : (directions = await this.getDriverDirections());
+
+    console.log("directions = " + directions);
+
+    this.setState({ duration: directions.legs[0].duration_in_traffic.text });
+  };
+
+  async getDriverPoly() {
+    let directions;
+    this.state.driverDirections.legs
+      ? (directions = await this.state.driverDirections)
+      : (directions = await this.getDriverDirections());
+
+    driverPolyline = decodePolyline(directions.overview_polyline.points);
+    this.setState({ driverPolyline: driverPolyline });
+  }
+
   async getPoly() {
     await fetch(
       "https://maps.googleapis.com/maps/api/directions/json?key=" +
@@ -541,16 +625,19 @@ export default class Home extends React.Component {
         "&destination=" +
         this.state.destination.lat +
         "," +
-        this.state.destination.lng
+        this.state.destination.lng +
+        "&departure_time=now"
     )
       .then(response => response.json())
       .then(responseJson => {
         //console.log(JSON.stringify(responseJson));
         if (responseJson.status == "OK") {
-          // console.log(responseJson.routes[0].overview_polyline);
+          //console.log(responseJson.routes[0].legs[0].duration_in_traffic.text);
           polyline = decodePolyline(responseJson.routes[0].overview_polyline.points);
           //console.log(polyline);
           this.setState({ polyline });
+          //this.setState({ duration: responseJson.routes[0].legs[0].duration_in_traffic.text });
+          //console.log(this.state);
         } else {
           console.log(
             "Polyline fallida con origen",
@@ -820,7 +907,7 @@ export default class Home extends React.Component {
         case Constants.FLOW_STATUS_ERROR:
           return <FlowError onConfirm={this.clear} />;
         case Constants.FLOW_STATUS_CONFIRMED:
-          return <FlowAceptar onCancel={this.cancelOrder} />;
+          return <FlowAceptar onCancel={this.cancelOrder} duration={this.state.duration} />;
         case Constants.FLOW_STATUS_BOARDING:
           console.log("estado", this.state);
           return <FlowAbordando order={this.state.currentOrder} />;
