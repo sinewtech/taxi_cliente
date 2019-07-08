@@ -202,23 +202,28 @@ export class FlowAbordando extends React.Component {
         <Text style={styles.displayTitle} flex={1}>
           Tu taxi está aquí
         </Text>
+        <Text flex={1}>
+          {this.state.driver
+            ? this.state.driver.firstName +
+              " te espera en un " +
+              this.state.driver.description +
+              " placa " +
+              this.state.driver.plate
+            : null}
+        </Text>
         <View style={styles.imagesView}>
           {this.state.images.map(image => {
             console.log("imagen", image);
             return (
               <TouchableNativeFeedback
                 onPress={() => this.setState({ visible: true })}
-                background={TouchableNativeFeedback.SelectableBackground()}>
-                <Image key={image.url} style={styles.driverImage} source={{ uri: image.url }} />
+                background={TouchableNativeFeedback.SelectableBackground()}
+                key={image.url}>
+                <Image style={styles.driverImage} source={{ uri: image.url }} />
               </TouchableNativeFeedback>
             );
           })}
         </View>
-        <Text flex={1}>
-          {this.state.driver
-            ? this.state.driver.description + " placa " + this.state.driver.plate
-            : null}
-        </Text>
         <Modal
           animationType="slide"
           onRequestClose={() => {
