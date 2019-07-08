@@ -46,6 +46,9 @@ export const NOTIFICATION_RATING = 3;
 //Mapas
 export const MAPS_API_KEY = "AIzaSyApNgtxFBp0SXSHljP_xku6peNCzjTFWM4";
 
+//Suma duracion
+export const DRIVER_DURATION_OFFSET = 300;
+
 export const REFERENCE_RADIUS = 100;
 export const SEARCH_RADIUS = 10000;
 

@@ -191,38 +191,44 @@ export default class Home extends React.Component {
                           flowStatus: 2,
                         });
                       } else if (order.status === 1) {
-                        this.setState({
-                          quote: {
-                            precio: order.price,
+                        this.setState(
+                          {
+                            quote: {
+                              precio: order.price,
+                            },
+                            origin: order.origin,
+                            destination: order.destination,
+                            currentOrder: datasnap.key,
+                            flowStatus: 4,
                           },
-                          origin: order.origin,
-                          destination: order.destination,
-                          currentOrder: datasnap.key,
-                          flowStatus: 4,
-                        });
-                        this.getDriverTime();
+                          this.getDriverTime
+                        );
                       } else if (order.status === 2 || order.status === 3) {
-                        this.setState({
-                          quote: {
-                            precio: order.price,
+                        this.setState(
+                          {
+                            quote: {
+                              precio: order.price,
+                            },
+                            origin: order.origin,
+                            destination: order.destination,
+                            currentOrder: datasnap.key,
+                            flowStatus: 5,
                           },
-                          origin: order.origin,
-                          destination: order.destination,
-                          currentOrder: datasnap.key,
-                          flowStatus: 5,
-                        });
-                        this.getDriverTime();
+                          this.getDriverTime
+                        );
                       } else if (order.status === 5) {
-                        this.setState({
-                          quote: {
-                            precio: order.price,
+                        this.setState(
+                          {
+                            quote: {
+                              precio: order.price,
+                            },
+                            origin: order.origin,
+                            destination: order.destination,
+                            currentOrder: datasnap.key,
+                            flowStatus: 6,
                           },
-                          origin: order.origin,
-                          destination: order.destination,
-                          currentOrder: datasnap.key,
-                          flowStatus: 6,
-                        });
-                        this.getDriverTime();
+                          this.getDriverTime
+                        );
                       }
                     }
                   }
@@ -539,58 +545,60 @@ export default class Home extends React.Component {
   };
 
   getDriverDirections = async () => {
-    let lat = 0.0;
-    let lng = 0.0;
-    await firebase
-      .database()
-      .ref()
-      .child("/quotes/" + this.state.currentOrder + "/driver/")
-      .once("value", driverUid => {
-        let driver = driverUid.exportVal();
-        console.log("DRIVER UID = " + driver);
-        firebase
-          .database()
-          .ref()
-          .child("/locations/" + driver + "/position/")
-          .once("value", async driverLocation => {
-            let driverLoc = driverLocation.exportVal();
-            lat = await driverLoc.lat;
-            lng = await driverLoc.lng;
-            console.log("DRIVER LAT = " + lat);
-            console.log("DRIVER LNG = " + lng);
-            console.log("lat1 = " + lat);
-            console.log("lng1 = " + lng);
-            console.log("lat1 = " + this.state.origin.lat);
-            console.log("lng1 = " + this.state.origin.lng);
-            await fetch(
-              "https://maps.googleapis.com/maps/api/directions/json?key=" +
-                Constants.MAPS_API_KEY +
-                "&origin=" +
-                lat +
-                "," +
-                lng +
-                "&destination=" +
-                this.state.origin.lat +
-                "," +
-                this.state.origin.lng +
-                "&departure_time=now"
-            )
-              .then(response => response.json())
-              .then(resp => {
-                //console.log(JSON.stringify(resp));
-                if (resp.status == "OK") {
-                  this.setState({ driverDirections: resp.routes[0] });
-                  return this.state.driverDirections;
-                } else {
-                  console.log("Error fetch tiempo conductor");
-                  console.log("lat2 = " + lat);
-                  console.log("lng2 = " + lng);
-                  console.log("lat2 = " + this.state.origin.lat);
-                  console.log("lng2 = " + this.state.origin.lng);
-                }
-              });
-          });
-      });
+    return new Promise(async (resolve, reject) => {
+      let lat = 0.0;
+      let lng = 0.0;
+      await firebase
+        .database()
+        .ref()
+        .child("/quotes/" + this.state.currentOrder + "/driver/")
+        .once("value", driverUid => {
+          let driver = driverUid.exportVal();
+          console.log("DRIVER UID = " + driver);
+          firebase
+            .database()
+            .ref()
+            .child("/locations/" + driver + "/position/")
+            .once("value", async driverLocation => {
+              let driverLoc = driverLocation.exportVal();
+              lat = await driverLoc.lat;
+              lng = await driverLoc.lng;
+              console.log("DRIVER LAT = " + lat);
+              console.log("DRIVER LNG = " + lng);
+              console.log("lat1 = " + lat);
+              console.log("lng1 = " + lng);
+              console.log("lat1 = " + this.state.origin.lat);
+              console.log("lng1 = " + this.state.origin.lng);
+              await fetch(
+                "https://maps.googleapis.com/maps/api/directions/json?key=" +
+                  Constants.MAPS_API_KEY +
+                  "&origin=" +
+                  lat +
+                  "," +
+                  lng +
+                  "&destination=" +
+                  this.state.origin.lat +
+                  "," +
+                  this.state.origin.lng +
+                  "&departure_time=now"
+              )
+                .then(response => response.json())
+                .then(resp => {
+                  //console.log(JSON.stringify(resp));
+                  if (resp.status == "OK") {
+                    this.setState({ driverDirections: resp.routes[0] });
+                    resolve(this.state.driverDirections);
+                  } else {
+                    console.log("Error fetch tiempo conductor");
+                    console.log("lat2 = " + lat);
+                    console.log("lng2 = " + lng);
+                    console.log("lat2 = " + this.state.origin.lat);
+                    console.log("lng2 = " + this.state.origin.lng);
+                  }
+                });
+            });
+        });
+    });
   };
 
   getDriverTime = async () => {
@@ -599,9 +607,12 @@ export default class Home extends React.Component {
       ? (directions = await this.state.driverDirections)
       : (directions = await this.getDriverDirections());
 
-    console.log("directions = " + directions);
-
-    this.setState({ duration: directions.legs[0].duration_in_traffic.text });
+    this.setState({
+      duration:
+        Math.round(
+          (directions.legs[0].duration_in_traffic.value + Constants.DRIVER_DURATION_OFFSET) / 60
+        ) + " min",
+    });
   };
 
   async getDriverPoly() {
@@ -839,7 +850,7 @@ export default class Home extends React.Component {
       .update(updates, error =>
         error
           ? this.setState({ flowStatus: Constants.FLOW_STATUS_ERROR })
-          : this.setState({ flowStatus: Constants.FLOW_STATUS_CONFIRMED })
+          : (this.setState({ flowStatus: Constants.FLOW_STATUS_CONFIRMED }), this.getDriverTime())
       );
   };
 
