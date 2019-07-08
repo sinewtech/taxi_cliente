@@ -147,6 +147,9 @@ export class FlowAceptar extends React.Component {
           Tu unidad ya va en camino.
         </Text>
         <Text style={styles.disclaimer} flex={1}>
+          La unidad llegará en aproximadamente {this.props.duration}.
+        </Text>
+        <Text style={styles.disclaimer} flex={1}>
           ¡Gracias por tu preferencia!
         </Text>
         <BottomButton
