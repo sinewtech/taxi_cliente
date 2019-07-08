@@ -147,6 +147,9 @@ export class FlowAceptar extends React.Component {
           Tu unidad ya va en camino.
         </Text>
         <Text style={styles.disclaimer} flex={1}>
+          La unidad llegará en aproximadamente {this.props.duration}.
+        </Text>
+        <Text style={styles.disclaimer} flex={1}>
           ¡Gracias por tu preferencia!
         </Text>
         <BottomButton
@@ -206,11 +209,7 @@ export class FlowAbordando extends React.Component {
               <TouchableNativeFeedback
                 onPress={() => this.setState({ visible: true })}
                 background={TouchableNativeFeedback.SelectableBackground()}>
-                <Image
-                  key={image.url}
-                  style={styles.driverImage}
-                  source={{ uri: image.url }}
-                />
+                <Image key={image.url} style={styles.driverImage} source={{ uri: image.url }} />
               </TouchableNativeFeedback>
             );
           })}
@@ -487,7 +486,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
     alignContent: "center",
-    flex: 3
+    flex: 3,
   },
 
   driverImage: {
