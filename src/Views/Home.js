@@ -772,6 +772,24 @@ export default class Home extends React.Component {
 
       if (location.gpsAvailable) {
         await this._getLocationAsync();
+        (this.state.userData.dev === true) ? 
+        data = {
+          userUid: this.state.userUid,
+          origin: {
+            name: "Ubicación del Cliente",
+            address: "Obtenida por GPS",
+            lat: this.state.location.coords.latitude,
+            lng: this.state.location.coords.longitude,
+          },
+          destination: this.state.destination,
+          status: Constants.QUOTE_STATUS_PENDING,
+          usingGps: this.state.usingGps,
+          askingDateTime: new Date().toString(),
+          dev: true,
+        }
+
+        :
+
         data = {
           userUid: this.state.userUid,
           origin: {
