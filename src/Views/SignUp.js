@@ -120,6 +120,7 @@ class SignUp extends Component {
             inputContainerStyle={styles.Input}
             leftIconContainerStyle={{ marginRight: 15 }}
             autoCapitalize="words"
+            value={this.state.firstName}
             onChangeText={text => this.setState({ firstName: text })}
           />
           <Input
@@ -129,6 +130,7 @@ class SignUp extends Component {
             inputContainerStyle={styles.Input}
             leftIconContainerStyle={{ marginRight: 15 }}
             autoCapitalize="words"
+            value={this.state.lastName}
             onChangeText={text => this.setState({ lastName: text })}
           />
           <Input
@@ -140,6 +142,7 @@ class SignUp extends Component {
             autoCapitalize="none"
             autoComplete="email"
             keyboardType="email-address"
+            value={this.state.mail}
             onChangeText={text => this.setState({ mail: text })}
           />
           <Input
@@ -150,6 +153,7 @@ class SignUp extends Component {
             leftIconContainerStyle={{ marginRight: 15 }}
             autoComplete="password"
             secureTextEntry={true}
+            value={this.state.password}
             onChangeText={text => this.setState({ password: text })}
           />
           <TextInputMask

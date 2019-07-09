@@ -51,7 +51,7 @@ class LogIn extends Component {
         await this.clear();
         return;
       }
-      
+
       firebase
         .auth()
         .signInWithEmailAndPassword(this.state.mail, this.state.password)
@@ -110,6 +110,7 @@ class LogIn extends Component {
             autoCapitalize="none"
             autoComplete="email"
             keyboardType="email-address"
+            value={this.state.mail}
             onChangeText={text => this.setState({ mail: text })}
           />
           <Input
@@ -119,6 +120,7 @@ class LogIn extends Component {
             leftIconContainerStyle={{ marginRight: 15 }}
             autoComplete="password"
             secureTextEntry={true}
+            value={this.state.password}
             onChangeText={text => this.setState({ password: text })}
           />
         </View>
@@ -130,11 +132,7 @@ class LogIn extends Component {
               this.props.navigation.navigate("SignUp");
             }}
           />
-          <Button
-            buttonStyle={styles.button}
-            title="Iniciar Sesión"
-            onPress={this.handleSignIn}
-          />
+          <Button buttonStyle={styles.button} title="Iniciar Sesión" onPress={this.handleSignIn} />
         </View>
       </KeyboardAvoidingView>
     );
@@ -184,7 +182,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-evenly",
     width: Dimensions.get("window").width * 0.9,
-    height: 45
+    height: 45,
   },
 
   button: {
