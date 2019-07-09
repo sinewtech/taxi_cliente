@@ -772,6 +772,7 @@ export default class Home extends React.Component {
 
       if (location.gpsAvailable) {
         await this._getLocationAsync();
+
         (this.state.userData.dev === true) ? 
         data = {
           userUid: this.state.userUid,
@@ -826,6 +827,8 @@ export default class Home extends React.Component {
       }
     } else {
       console.log("Enviando carrera con origen manual...");
+      
+      (this.state.userData.dev) ?
 
       data = {
         userUid: this.state.userUid,
@@ -833,6 +836,19 @@ export default class Home extends React.Component {
         destination: this.state.destination,
         status: Constants.QUOTE_STATUS_PENDING,
         usingGps: false,
+        askingDateTime: new Date().toString(),
+        dev: true,
+      }
+
+      :
+
+      data = {
+        userUid: this.state.userUid,
+        origin: this.state.origin,
+        destination: this.state.destination,
+        status: Constants.QUOTE_STATUS_PENDING,
+        usingGps: false,
+        askingDateTime: new Date().toString(),
       };
 
       console.log("Enviando orden", data);

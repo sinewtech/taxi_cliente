@@ -1,10 +1,10 @@
 {
-  "expoServerPort": null,
-  "expoServerNgrokUrl": null,
-  "packagerNgrokUrl": null,
-  "ngrokPid": null,
+  "expoServerPort": 19000,
+  "expoServerNgrokUrl": "https://sy-gqs.anonymous.taxi-cliente.exp.direct",
+  "packagerNgrokUrl": "https://packager.sy-gqs.anonymous.taxi-cliente.exp.direct",
+  "ngrokPid": 16272,
   "devToolsPort": 19002,
-  "packagerPort": null,
-  "packagerPid": null,
+  "packagerPort": 19001,
+  "packagerPid": 22132,
   "webpackServerPort": null
 }
