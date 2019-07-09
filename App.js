@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import Home from "./src/Views/Home";
 import LogIn from "./src/Views/LogIn";
 import SignUp from "./src/Views/SignUp";
+import Feedback from "./src/Views/Feedback";
 import UserValidator from "./src/Components/UserValidator";
 import {
   createDrawerNavigator,
@@ -11,6 +12,7 @@ import {
   DrawerItems,
   SafeAreaView,
 } from "react-navigation";
+import * as Constants from "./src/Constants";
 import LogOut from "./src/Components/LogOut";
 
 // Ignorar los warnings de firebase
@@ -55,6 +57,7 @@ const drawerContent = props => (
 );
 
 const homeIcon = <Icon name="directions-car" color="#616161" />;
+const bugIcon = <Icon name="bug-report" color="#616161" />;
 const logoutIcon = <Icon name="logout" type="material-community" color="#616161" />;
 
 const AppStack = createDrawerNavigator(
@@ -71,6 +74,24 @@ const AppStack = createDrawerNavigator(
       navigationOptions: ({ navigation }) => ({
         title: "Cerrar sesión",
         drawerIcon: logoutIcon,
+      }),
+    },
+    Feedback: {
+      screen: createStackNavigator({
+        Feedback: {
+          screen: Feedback,
+          navigationOptions: {
+            title: "Feedback",
+            headerTintColor: "#ffffff",
+            headerStyle: {
+              backgroundColor: Constants.COLOR_ORANGE,
+            },
+          },
+        },
+      }),
+      navigationOptions: ({ navigation }) => ({
+        title: "Reportar un error",
+        drawerIcon: bugIcon,
       }),
     },
   },
