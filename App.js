@@ -77,18 +77,7 @@ const AppStack = createDrawerNavigator(
       }),
     },
     Feedback: {
-      screen: createStackNavigator({
-        Feedback: {
-          screen: Feedback,
-          navigationOptions: {
-            title: "Feedback",
-            headerTintColor: "#ffffff",
-            headerStyle: {
-              backgroundColor: Constants.COLOR_ORANGE,
-            },
-          },
-        },
-      }),
+      screen: Feedback,
       navigationOptions: ({ navigation }) => ({
         title: "Reportar un error",
         drawerIcon: bugIcon,
