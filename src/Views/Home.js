@@ -168,7 +168,7 @@ export default class Home extends React.Component {
 
     if (user) {
       await this.setState({ userUid: user.uid });
-      
+
       var docRef = Constants.FIRESTORE.collection("clients").doc(this.state.userUid);
 
       docRef
@@ -772,37 +772,34 @@ export default class Home extends React.Component {
 
       if (location.gpsAvailable) {
         await this._getLocationAsync();
-        (this.state.userData.dev === true) ? 
-        data = {
-          userUid: this.state.userUid,
-          origin: {
-            name: "Ubicación del Cliente",
-            address: "Obtenida por GPS",
-            lat: this.state.location.coords.latitude,
-            lng: this.state.location.coords.longitude,
-          },
-          destination: this.state.destination,
-          status: Constants.QUOTE_STATUS_PENDING,
-          usingGps: this.state.usingGps,
-          askingDateTime: new Date().toString(),
-          dev: true,
-        }
-
-        :
-
-        data = {
-          userUid: this.state.userUid,
-          origin: {
-            name: "Ubicación del Cliente",
-            address: "Obtenida por GPS",
-            lat: this.state.location.coords.latitude,
-            lng: this.state.location.coords.longitude,
-          },
-          destination: this.state.destination,
-          status: Constants.QUOTE_STATUS_PENDING,
-          usingGps: this.state.usingGps,
-          askingDateTime: new Date().toString(),
-        };
+        this.state.userData.dev === true
+          ? (data = {
+              userUid: this.state.userUid,
+              origin: {
+                name: "Ubicación del Cliente",
+                address: "Obtenida por GPS",
+                lat: this.state.location.coords.latitude,
+                lng: this.state.location.coords.longitude,
+              },
+              destination: this.state.destination,
+              status: Constants.QUOTE_STATUS_PENDING,
+              usingGps: this.state.usingGps,
+              timeStamps: { askingDateTime: new Date().toString() },
+              dev: true,
+            })
+          : (data = {
+              userUid: this.state.userUid,
+              origin: {
+                name: "Ubicación del Cliente",
+                address: "Obtenida por GPS",
+                lat: this.state.location.coords.latitude,
+                lng: this.state.location.coords.longitude,
+              },
+              destination: this.state.destination,
+              status: Constants.QUOTE_STATUS_PENDING,
+              usingGps: this.state.usingGps,
+              timeStamps: { askingDateTime: new Date().toString() },
+            });
 
         console.log("Enviando orden", data);
         var key = firebase
@@ -1226,11 +1223,11 @@ export default class Home extends React.Component {
       this.setState({ userdata });
       this.state.dev === true
         ? (Platform.OS === "android" ? ToastAndroid.show("Dev Mode", ToastAndroid.LONG) : null,
-        console.log("DEV MODE: ON"))
+          console.log("DEV MODE: ON"))
         : (Platform.OS === "android" ? ToastAndroid.show("User Mode", ToastAndroid.LONG) : null,
-        console.log("DEV MODE: OFF"));
+          console.log("DEV MODE: OFF"));
     }
-  }
+  };
 
   render() {
     if (this.state.user) {
@@ -1293,95 +1290,93 @@ export default class Home extends React.Component {
               }
               elevation={this.state.active ? 2 : 0}>
               <Input
-                  editable={this.state.flowStatus === Constants.FLOW_STATUS_NONE}
-                  containerStyle={
-                    this.state.active ? [styles.searchBar, styles.noElevation] : styles.searchBar
-                  }
-                  inputContainerStyle={styles.searchInput}
-                  underlineColorAndroid="transparent"
-                  onSubmitEditing={() => {
-                    this.searchPlaces(this.state.searchQuery);
-                  }}
-                  placeholder={
-                    this.state.flowStatus === Constants.FLOW_STATUS_NONE
-                      ? "Buscar lugares"
-                      : this.state.destination.name
-                      ? "A " + this.state.destination.name
-                      : "Cafés cerca de Metrópolis"
-                  }
-                  onFocus={this.activate.bind(this)}
-                  onChangeText={searchQuery => {
-                    this.autocompleteSearch(searchQuery);
-                  }}
-                  returnKeyType="search"
-                  leftIcon={
-                    this.state.active || this.state.flowStatus !== Constants.FLOW_STATUS_NONE ? (
-                      <Icon
-                        iconStyle={styles.searchBackIcon}
-                        name="arrow-back"
-                        color="#212121"
-                        size={22}
-                        onPress={this.deactivate}
-                        />
-                    ) : (
-                      (this.state.userData.dev)?
-                      <Icon
-                        iconStyle={styles.searchBackIcon}
-                        name="menu"
-                        type="material"
-                        color="#212121"
-                        size={22}
-                        onLongPress = {() => {
-                          console.log("left icon long pressed");
-                          this.devToggle();
-                          //console.log("Despues de devToggle");
-                        }}
-                        onPress={() => {
-                          this.props.navigation.openDrawer();
-                          console.log("Menu pressed");
-                        }}
-                      />
-                      :
-                      <Icon
-                        iconStyle={styles.searchBackIcon}
-                        name="menu"
-                        type="material"
-                        color="#212121"
-                        size={22}
-                        onPress={() => {
-                          this.props.navigation.openDrawer();
-                          console.log("Menu pressed");
-                        }}
-                      />
-                    )
-                  }
-                  rightIcon={
+                editable={this.state.flowStatus === Constants.FLOW_STATUS_NONE}
+                containerStyle={
+                  this.state.active ? [styles.searchBar, styles.noElevation] : styles.searchBar
+                }
+                inputContainerStyle={styles.searchInput}
+                underlineColorAndroid="transparent"
+                onSubmitEditing={() => {
+                  this.searchPlaces(this.state.searchQuery);
+                }}
+                placeholder={
+                  this.state.flowStatus === Constants.FLOW_STATUS_NONE
+                    ? "Buscar lugares"
+                    : this.state.destination.name
+                    ? "A " + this.state.destination.name
+                    : "Cafés cerca de Metrópolis"
+                }
+                onFocus={this.activate.bind(this)}
+                onChangeText={searchQuery => {
+                  this.autocompleteSearch(searchQuery);
+                }}
+                returnKeyType="search"
+                leftIcon={
+                  this.state.active || this.state.flowStatus !== Constants.FLOW_STATUS_NONE ? (
                     <Icon
-                      iconStyle={styles.icon}
-                      name="search"
-                      size={25}
-                      color={Constants.COLOR_ORANGE}
-                      onLongPress = { () => {
-                        userdata = this.state;
-                        console.log(userdata.dev);
+                      iconStyle={styles.searchBackIcon}
+                      name="arrow-back"
+                      color="#212121"
+                      size={22}
+                      onPress={this.deactivate}
+                    />
+                  ) : this.state.userData.dev ? (
+                    <Icon
+                      iconStyle={styles.searchBackIcon}
+                      name="menu"
+                      type="material"
+                      color="#212121"
+                      size={22}
+                      onLongPress={() => {
+                        console.log("left icon long pressed");
+                        this.devToggle();
+                        //console.log("Despues de devToggle");
                       }}
                       onPress={() => {
-                        if (this.state.flowStatus === Constants.FLOW_STATUS_NONE) {
-                          if (this.state.active) {
-                            this.wait();
-                            this.searchPlaces(this.state.searchQuery);
-                            this.deactivate();
-                          } else {
-                            this.activate();
-                          }
-                        } else {
-                          Alert.alert("Error", "Solo puedes pedir un taxi a la vez.");
-                        }
+                        this.props.navigation.openDrawer();
+                        console.log("Menu pressed");
                       }}
                     />
-                  }
-                />
-              
+                  ) : (
+                    <Icon
+                      iconStyle={styles.searchBackIcon}
+                      name="menu"
+                      type="material"
+                      color="#212121"
+                      size={22}
+                      onPress={() => {
+                        this.props.navigation.openDrawer();
+                        console.log("Menu pressed");
+                      }}
+                    />
+                  )
+                }
+                rightIcon={
+                  <Icon
+                    iconStyle={styles.icon}
+                    name="search"
+                    size={25}
+                    color={Constants.COLOR_ORANGE}
+                    onLongPress={() => {
+                      userdata = this.state;
+                      console.log(userdata.dev);
+                    }}
+                    onPress={() => {
+                      if (this.state.flowStatus === Constants.FLOW_STATUS_NONE) {
+                        if (this.state.active) {
+                          this.wait();
+                          this.searchPlaces(this.state.searchQuery);
+                          this.deactivate();
+                        } else {
+                          this.activate();
+                        }
+                      } else {
+                        Alert.alert("Error", "Solo puedes pedir un taxi a la vez.");
+                      }
+                    }}
+                  />
+                }
+              />
             </View>
             <Animated.View style={[styles.resultView, animatedStyles.resultView]}>
               {this.resultViewContent()}
