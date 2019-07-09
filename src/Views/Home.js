@@ -772,7 +772,6 @@ export default class Home extends React.Component {
 
       if (location.gpsAvailable) {
         await this._getLocationAsync();
-
         data = {
           userUid: this.state.userUid,
           origin: {
@@ -784,6 +783,7 @@ export default class Home extends React.Component {
           destination: this.state.destination,
           status: Constants.QUOTE_STATUS_PENDING,
           usingGps: this.state.usingGps,
+          askingDateTime: new Date().toString(),
         };
 
         console.log("Enviando orden", data);
