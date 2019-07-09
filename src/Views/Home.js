@@ -16,6 +16,7 @@ import {
   ActivityIndicator,
   Platform,
   ToastAndroid,
+  AppState
 } from "react-native";
 
 import { Notifications } from "expo";
@@ -544,6 +545,9 @@ export default class Home extends React.Component {
         });
         break;
       }
+    }
+    if (Platform.OS === "android" && AppState.currentState === "active") {
+      await Notifications.dismissAllNotificationsAsync();
     }
   };
 
