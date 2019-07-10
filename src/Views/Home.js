@@ -512,7 +512,7 @@ export default class Home extends React.Component {
     await this.setState({ location });
   };
 
-  _handleNotification = notification => {
+  _handleNotification = async notification => {
     // Notifications.dismissAllNotificationsAsync();
     console.log("notification id", notification.data.id);
     console.log("notification data", notification.data);
@@ -546,6 +546,7 @@ export default class Home extends React.Component {
         break;
       }
     }
+
     if (Platform.OS === "android" && AppState.currentState === "active") {
       await Notifications.dismissAllNotificationsAsync();
     }
