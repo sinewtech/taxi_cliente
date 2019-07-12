@@ -2,12 +2,11 @@
     "@type": "MessageCard",
     "@context": "http://schema.org/extensions",
     "themeColor": "779D3C",
-    "summary": "Archivos de build para taxi_cliente beta enviados a Expo",
+    "summary": "Paquetes de build para taxi_cliente beta enviados a Expo 🚀",
     "sections": [
         {
-            "activityTitle": "Build de `taxi_cliente` comenzada",
-            "activitySubtitle": "Los archivos están siendo procesados por Expo",
-            "activityImage": "https://d1wp6m56sqw74a.cloudfront.net/~assets/25f945b5a3a404dafb6fcd5a5b797506",
+            "activityTitle": "Build de `taxi_cliente` comenzada 🚀",
+            "activitySubtitle": "Los paquetes están siendo procesados por Expo",
             "facts": [
                 {
                     "name": "Release Channel",

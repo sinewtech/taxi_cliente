@@ -2,10 +2,10 @@
     "@type": "MessageCard",
     "@context": "http://schema.org/extensions",
     "themeColor": "779D3C",
-    "summary": "Preparando paquetes de build para taxi_cliente beta 📦",
+    "summary": "Comenzando build para taxi_cliente beta 🚧",
     "sections": [
         {
-            "activityTitle": "Preparando paquetes de build para `taxi_cliente` 📦",
+            "activityTitle": "Comenzando nueva build para `taxi_cliente` 🚧",
             "activitySubtitle": "Build Automatizada | Release Channel: `beta`",
             "markdown": true
         }

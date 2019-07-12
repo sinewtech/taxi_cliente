@@ -6,6 +6,7 @@ env:
 phases:
   install:
     commands:
+      - "curl -X POST -H \"Content-Type: application/json\" -d @./notif/beta/notif_starting.json https://outlook.office.com/webhook/51563557-8ad2-4742-be7a-43e83ceb02fd@d0b5b587-5748-42b1-ab45-fb05919c0998/IncomingWebhook/22533cea3792433e8fcefc9913e38019/cb90240d-bba9-4047-95f6-63773fc8886c"
       - apt-get update
       - apt-get install -y nodejs
       - npm i -g expo-cli
