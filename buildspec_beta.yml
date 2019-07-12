@@ -2,8 +2,8 @@ version: 0.2
 
 env:
   variables:
-    EXP_USERNAME: "sinewave"
-    EXP_PASSWORD: "papitopiernaslargas69"
+    EXPO_USERNAME: "sinewave"
+    EXPO_PASSWORD: "papitopiernaslargas69"
     EXPO_DEBUG: true
 
 phases:
