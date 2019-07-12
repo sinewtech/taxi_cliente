@@ -1,18 +1,14 @@
 version: 0.2
 
-env:
-  variables:
-    EXPO_USERNAME: "sinewave"
-    EXPO_PASSWORD: "papitopiernaslargas69"
-    EXPO_DEBUG: true
-
 phases:
   install:
     commands:
-      - npm install
+      - sudo apt install nodejs
+      - npm i -g expo-cli
   pre_build:
     commands:
-      - expo login --non-interactive -u $EXPO_USERNAME -p $EXPO_PASSWORD
+      - expo login -u sinewave -p papitopiernaslargas69 --non-interactive
+      - npm i
   build:
     commands:
       - expo build:android --non-interactive --release-channel beta
