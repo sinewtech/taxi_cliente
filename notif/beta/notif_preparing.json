@@ -1,0 +1,20 @@
+{
+    "@type": "MessageCard",
+    "@context": "http://schema.org/extensions",
+    "themeColor": "779D3C",
+    "summary": "Preparando build para taxi_cliente beta",
+    "sections": [
+        {
+            "activityTitle": "Preparando nueva build para `taxi_cliente`",
+            "activitySubtitle": "Build Automatizada",
+            "activityImage": "https://d1wp6m56sqw74a.cloudfront.net/~assets/25f945b5a3a404dafb6fcd5a5b797506",
+            "facts": [
+                {
+                    "name": "Release Channel",
+                    "value": "`beta`"
+                }
+            ],
+            "markdown": true
+        }
+    ]   
+}
