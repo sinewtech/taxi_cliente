@@ -1,0 +1,18 @@
+version: 0.2
+
+env:
+  variables:
+    EXP_USERNAME: "sinewave"
+    EXP_PASSWORD: "papitopiernaslargas69"
+    EXPO_DEBUG: true
+
+phases:
+  install:
+    commands:
+      - npm install
+  pre_build:
+    commands:
+      - expo login --non-interactive -u $EXPO_USERNAME -p $EXPO_PASSWORD
+  build:
+    commands:
+      - expo build:android --non-interactive --release-channel beta
