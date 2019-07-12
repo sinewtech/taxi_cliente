@@ -122,7 +122,7 @@ export default class Home extends React.Component {
 
       selectingLocation: Constants.LOCATION_DESTINATION,
       origin: { lat: 14.0481, lng: -87.1741 },
-      destination: { name: "Tegucigalpa", lat: 14.0481, lng: -87.1741 },
+      destination: { name: "Tegucigalpa, M.D.C.", lat: 14.0481, lng: -87.1741 },
       directions: [],
       polyline: [],
 
