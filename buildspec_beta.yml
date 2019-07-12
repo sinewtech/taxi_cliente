@@ -16,4 +16,4 @@ phases:
       - export NODE_OPTIONS=--max_old_space_size=4096
   build:
     commands:
-      - expo build:android --non-interactive --release-channel beta
+      - expo build:android --no-wait --non-interactive --release-channel beta
