@@ -3,8 +3,8 @@ version: 0.2
 phases:
   install:
     commands:
-      - apt-get update
-      - apt-get install nodejs
+      - apt update
+      - apt install -y nodejs
       - npm i -g expo-cli
   pre_build:
     commands:
