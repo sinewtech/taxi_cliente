@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { StyleSheet, View, Text } from "react-native";
-import { AirbnbRating } from "react-native-ratings";
+import { AirbnbRating } from "react-native-elements";
 
 class Rating extends Component {
   render() {

@@ -1,14 +1,22 @@
 import React from "react";
 import { Text, View, ScrollView, StyleSheet, TouchableOpacity, Modal, Alert } from "react-native";
-import { Icon, Divider, Image } from "react-native-elements";
+import { Icon, Divider, Image, Button } from "react-native-elements";
 import BottomButton from "./BottomButton";
 import ImageViewer from "react-native-image-zoom-viewer";
 import firebase from "firebase";
 import "@firebase/firestore";
 import Rating from "./Rating";
+import * as Constants from "../Constants";
 import { TouchableNativeFeedback } from "react-native-gesture-handler";
 
 export class FlowCotizar extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { payment: "CASH" };
+  }
+  componentDidMount = () => {
+    this.props.changePayment(this.state.payment);
+  };
   render() {
     return (
       <View style={styles.mainViewPaddingless}>
@@ -36,6 +44,35 @@ export class FlowCotizar extends React.Component {
                 <Icon style={styles.rutaIcon} name="edit" color="gray" size={12} />
               </TouchableOpacity>
             </View>
+          </View>
+          <View
+            style={{
+              flexDirection: "row",
+              width: "100%",
+              justifyContent: "space-evenly",
+            }}>
+            <Button
+              title="Efectivo"
+              onPress={async () => {
+                await this.setState({ payment: "CASH" });
+                this.props.changePayment(this.state.payment);
+              }}
+              buttonStyle={{
+                backgroundColor: this.state.payment === "CASH" ? Constants.COLOR_GREEN : "#616161",
+              }}
+              icon={<Icon color="white" name="cash-usd" type="material-community" />}
+            />
+            <Button
+              title="Tarjeta"
+              onPress={async () => {
+                await this.setState({ payment: "POS" });
+                this.props.changePayment(this.state.payment);
+              }}
+              buttonStyle={{
+                backgroundColor: this.state.payment === "POS" ? Constants.COLOR_GREEN : "#616161",
+              }}
+              icon={<Icon color="white" name="credit-card" type="material-community" />}
+            />
           </View>
           <Text style={styles.disclaimer}>No se te cobrará nada hasta que aceptes el precio.</Text>
         </View>

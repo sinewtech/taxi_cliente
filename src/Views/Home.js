@@ -16,7 +16,7 @@ import {
   ActivityIndicator,
   Platform,
   ToastAndroid,
-  AppState
+  AppState,
 } from "react-native";
 
 import { Notifications } from "expo";
@@ -129,7 +129,7 @@ export default class Home extends React.Component {
       duration: "0 min",
       driverDirections: {},
       driverPolyline: [],
-
+      payment: "CASH",
       quote: {
         mensaje: "Cotización",
         precio: 0.0,
@@ -790,6 +790,7 @@ export default class Home extends React.Component {
               status: Constants.QUOTE_STATUS_PENDING,
               usingGps: this.state.usingGps,
               timeStamps: { clientAsked: new Date().toString() },
+              payment: this.state.payment,
               dev: true,
             })
           : (data = {
@@ -804,6 +805,7 @@ export default class Home extends React.Component {
               status: Constants.QUOTE_STATUS_PENDING,
               usingGps: this.state.usingGps,
               timeStamps: { clientAsked: new Date().toString() },
+              payment: this.state.payment,
             });
 
         console.log("Enviando orden", data);
@@ -887,7 +889,9 @@ export default class Home extends React.Component {
           : (this.setState({ flowStatus: Constants.FLOW_STATUS_CONFIRMED }), this.getDriverTime())
       );
   };
-
+  changePayment = payment => {
+    this.setState({ payment });
+  };
   resultViewContent() {
     const manualHeader = (
       <TouchableNativeFeedback
@@ -931,6 +935,7 @@ export default class Home extends React.Component {
               selectOrigin={this.selectOrigin}
               selectDestination={this.selectDestination}
               onConfirm={this.handleQuote}
+              changePayment={this.changePayment}
               onCancel={this.cancelOrder}
             />
           );
