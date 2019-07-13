@@ -777,7 +777,7 @@ export default class Home extends React.Component {
 
       if (location.gpsAvailable) {
         await this._getLocationAsync();
-        this.state.userData.dev
+        this.state.dev
           ? (data = {
               userUid: this.state.userUid,
               origin: {

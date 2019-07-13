@@ -1,10 +1,10 @@
 {
-  "expoServerPort": null,
-  "expoServerNgrokUrl": null,
-  "packagerNgrokUrl": null,
-  "ngrokPid": null,
+  "expoServerPort": 19000,
+  "expoServerNgrokUrl": "https://ft-bw2.sinewave.taxi-cliente.exp.direct",
+  "packagerNgrokUrl": "https://packager.ft-bw2.sinewave.taxi-cliente.exp.direct",
+  "ngrokPid": 2596,
   "devToolsPort": 19002,
-  "packagerPort": null,
-  "packagerPid": null,
+  "packagerPort": 19001,
+  "packagerPid": 17332,
   "webpackServerPort": null
 }
