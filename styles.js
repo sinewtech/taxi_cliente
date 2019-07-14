@@ -91,18 +91,6 @@ export const styles = StyleSheet.create({
     marginLeft: -10,
   },
 
-  suggest: {
-    backgroundColor: "white",
-    padding: 10,
-    borderWidth: 0.3,
-    borderColor: "#EEEEEE",
-    //margin:5,
-    //borderRadius: 10,
-    //paddingTop:10,
-    height: 80,
-    justifyContent: "center",
-  },
-
   manual: {
     backgroundColor: "white",
     padding: 10,
@@ -117,17 +105,6 @@ export const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-  },
-
-  suggestTitle: {
-    flex: 1,
-    fontSize: 16,
-  },
-
-  suggestSubtitle: {
-    flex: 1,
-    fontSize: 12,
-    color: "#616161",
   },
 
   manualTitle: {

@@ -39,8 +39,12 @@ import {
   FlowNoEncontrado,
   FlowRating,
 } from "../Components/Flow.js";
+
+import { ResultPlaces, AutocompletePlaces } from "../Components/Places";
+
 import { TouchableNativeFeedback } from "react-native-gesture-handler";
 import { ShakeEventExpo } from "../Components/ShakeEvent";
+
 let masterStyles = require("../../styles.js");
 let styles = masterStyles.styles;
 let animatedStyles = masterStyles.animatedStyles;
@@ -996,73 +1000,27 @@ export default class Home extends React.Component {
       );
     } else {
       if (this.state.places.length > 0) {
-        let places = [];
-
-        this.state.places.map(candidate => {
-          places.push(
-            <TouchableNativeFeedback
-              background={TouchableNativeFeedback.SelectableBackground()}
-              key={candidate.id}
-              onPress={async () => {
-                await this.wait();
-                await this.clear();
-                await this.deactivate();
-                await this.placeDetails(candidate.id);
-              }}>
-              <View>
-                <View style={styles.suggest}>
-                  <Text style={styles.suggestTitle}>{candidate.nombre}</Text>
-                  <Text style={styles.suggestSubtitle}>{candidate.direccion}</Text>
-                </View>
-              </View>
-            </TouchableNativeFeedback>
-          );
-        });
-
-        return (
-          <KeyboardAvoidingView behavior="padding">
-            {this.state.active ? manualHeader : null}
-            <ScrollView keyboardShouldPersistTaps={"handled"}>
-              {places.map(candidate => candidate)}
-            </ScrollView>
-          </KeyboardAvoidingView>
-        );
+        <ResultPlaces
+          places={this.state.places}
+          selectPlace={async placeId => {
+            await this.wait();
+            await this.clear();
+            await this.deactivate();
+            await this.placeDetails(placeId);
+          }}
+          showManualHeader={this.state.active}
+        />;
       } else {
-        let sugerencias = [];
-
-        this.state.placesAuto.map(candidate => {
-          sugerencias.push(
-            <TouchableNativeFeedback
-              background={TouchableNativeFeedback.SelectableBackground()}
-              key={candidate.place_id}
-              onPress={async () => {
-                await this.wait();
-                await this.clear();
-                await this.deactivate();
-                await this.placeDetails(candidate.place_id);
-              }}>
-              <View>
-                <View style={styles.suggest}>
-                  <Text style={styles.suggestTitle}>
-                    {candidate.structured_formatting.main_text}
-                  </Text>
-                  <Text style={styles.suggestSubtitle}>
-                    {candidate.structured_formatting.secondary_text}
-                  </Text>
-                </View>
-              </View>
-            </TouchableNativeFeedback>
-          );
-        });
-
-        return (
-          <View>
-            {this.state.active ? manualHeader : null}
-            <ScrollView keyboardShouldPersistTaps={"handled"}>
-              {sugerencias.map(candidate => candidate)}
-            </ScrollView>
-          </View>
-        );
+        <AutocompletePlaces
+          places={this.state.placesAuto}
+          selectPlace={async placeId => {
+            await this.wait();
+            await this.clear();
+            await this.deactivate();
+            await this.placeDetails(placeId);
+          }}
+          showManualHeader={this.state.active}
+        />;
       }
     }
   }
