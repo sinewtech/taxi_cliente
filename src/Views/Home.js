@@ -1000,7 +1000,7 @@ export default class Home extends React.Component {
       );
     } else {
       if (this.state.places.length > 0) {
-        <ResultPlaces
+        return <ResultPlaces
           places={this.state.places}
           selectPlace={async placeId => {
             await this.wait();
@@ -1009,9 +1009,12 @@ export default class Home extends React.Component {
             await this.placeDetails(placeId);
           }}
           showManualHeader={this.state.active}
+          manualHeader={manualHeader}
         />;
       } else {
-        <AutocompletePlaces
+        //console.log("Llamando autocomplete");
+
+        return <AutocompletePlaces
           places={this.state.placesAuto}
           selectPlace={async placeId => {
             await this.wait();
@@ -1020,6 +1023,7 @@ export default class Home extends React.Component {
             await this.placeDetails(placeId);
           }}
           showManualHeader={this.state.active}
+          manualHeader={manualHeader}
         />;
       }
     }
