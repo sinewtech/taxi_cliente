@@ -2,11 +2,12 @@ version: 0.2
 
 env:
   variables:
+    NOTIFICATION_WEBHOOK: "https://outlook.office.com/webhook/3cfe5008-c4ac-4ffe-9d95-711af83a0b7a@d0b5b587-5748-42b1-ab45-fb05919c0998/IncomingWebhook/e1e5a2acc0fb4a3a849ea4275f83ef8b/cb90240d-bba9-4047-95f6-63773fc8886c"
     EXPO_DEBUG: true
 phases:
   install:
     commands:
-      - "curl -X POST -H \"Content-Type: application/json\" -d @./notif/beta/notif_starting.json https://outlook.office.com/webhook/51563557-8ad2-4742-be7a-43e83ceb02fd@d0b5b587-5748-42b1-ab45-fb05919c0998/IncomingWebhook/22533cea3792433e8fcefc9913e38019/cb90240d-bba9-4047-95f6-63773fc8886c"
+      - "curl -X POST -H \"Content-Type: application/json\" -d @./notif/beta/notif_starting.json $NOTIFICATION_WEBHOOK"
       - apt-get update
       - apt-get install -y nodejs
       - npm i -g expo-cli
@@ -17,9 +18,9 @@ phases:
       - export NODE_OPTIONS=--max_old_space_size=4096
   build:
     commands:
-      - "curl -X POST -H \"Content-Type: application/json\" -d @./notif/beta/notif_preparing.json https://outlook.office.com/webhook/51563557-8ad2-4742-be7a-43e83ceb02fd@d0b5b587-5748-42b1-ab45-fb05919c0998/IncomingWebhook/22533cea3792433e8fcefc9913e38019/cb90240d-bba9-4047-95f6-63773fc8886c"
+      - "curl -X POST -H \"Content-Type: application/json\" -d @./notif/beta/notif_preparing.json $NOTIFICATION_WEBHOOK"
       - expo build:android --no-wait --non-interactive --release-channel beta
 
   post_build:
     commands:
-      - "curl -X POST -H \"Content-Type: application/json\" -d @./notif/beta/notif_sent.json https://outlook.office.com/webhook/51563557-8ad2-4742-be7a-43e83ceb02fd@d0b5b587-5748-42b1-ab45-fb05919c0998/IncomingWebhook/22533cea3792433e8fcefc9913e38019/cb90240d-bba9-4047-95f6-63773fc8886c"
+      - "curl -X POST -H \"Content-Type: application/json\" -d @./notif/beta/notif_sent.json $NOTIFICATION_WEBHOOK"
