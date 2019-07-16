@@ -176,19 +176,56 @@ export class FlowAceptar extends React.Component {
   render() {
     return (
       <View style={styles.mainViewPaddingless}>
-        <View flex={2}>
-          <Icon name="check-circle" size={70} color="#4CAF50" />
-        </View>
         <Text flex={1}>¡Éxito!</Text>
-        <Text style={styles.displayTitle} flex={1}>
-          Tu unidad ya va en camino.
+        <Text style={styles.displayTitle}>
+          Tu unidad llegará en aproximadamente {this.props.duration}.
         </Text>
-        <Text style={styles.disclaimer} flex={1}>
-          La unidad llegará en aproximadamente {this.props.duration}.
-        </Text>
-        <Text style={styles.disclaimer} flex={1}>
-          ¡Gracias por tu preferencia!
-        </Text>
+        <Button
+          icon={{ name: "phone", color: "white" }}
+          buttonStyle={{ backgroundColor: Constants.COLOR_GREEN, borderRadius: 100 }}
+          containerStyle={{ width: "80%" }}
+          onPress={() => {
+            Alert.alert("LLamada", "Se le notificara al conductor que llame a su numero", [
+              { text: "CANCELAR" },
+              {
+                text: "SOLICITAR",
+                onPress: () => {
+                  let messages = [];
+                  firebase
+                    .firestore()
+                    .collection("drivers")
+                    .doc(this.props.driver)
+                    .get()
+                    .then(snap => {
+                      messages.push({
+                        to: snap.data().pushDevices[0],
+                        sound: "default",
+                        title: "Ayuda a tu cliente",
+                        body: "El cliente necesita que lo llames.",
+                        data: {
+                          id: 5,
+                        },
+                        channelId: "carreras",
+                      });
+
+                      fetch("https://exp.host/--/api/v2/push/send", {
+                        method: "POST",
+                        mode: "no-cors",
+                        headers: {
+                          Accept: "application/json",
+                          "Content-Type": "application/json",
+                          "Access-Control-Allow-Origin": "*",
+                        },
+                        body: JSON.stringify(messages),
+                      });
+                    });
+                },
+              },
+            ]);
+          }}
+          title="SOLICITAR LLAMADA"
+        />
+        <Text style={styles.disclaimer}>¡Gracias por tu preferencia!</Text>
         <BottomButton
           onPress={this.props.onCancel}
           title="Cancelar carrera"
