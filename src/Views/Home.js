@@ -928,7 +928,7 @@ export default class Home extends React.Component {
     );
 
     if (this.state.flowStatus != Constants.FLOW_STATUS_NONE) {
-      console.log("el flow esta en este", this.state.flowStatus);
+      console.log("el flow esta en este: ", this.state.flowStatus);
       switch (this.state.flowStatus) {
         case Constants.FLOW_STATUS_QUOTING:
           return (
@@ -1000,31 +1000,35 @@ export default class Home extends React.Component {
       );
     } else {
       if (this.state.places.length > 0) {
-        return <ResultPlaces
-          places={this.state.places}
-          selectPlace={async placeId => {
-            await this.wait();
-            await this.clear();
-            await this.deactivate();
-            await this.placeDetails(placeId);
-          }}
-          showManualHeader={this.state.active}
-          manualHeader={manualHeader}
-        />;
+        return (
+          <ResultPlaces
+            places={this.state.places}
+            selectPlace={async placeId => {
+              await this.wait();
+              await this.clear();
+              await this.deactivate();
+              await this.placeDetails(placeId);
+            }}
+            showManualHeader={this.state.active}
+            manualHeader={manualHeader}
+          />
+        );
       } else {
         //console.log("Llamando autocomplete");
 
-        return <AutocompletePlaces
-          places={this.state.placesAuto}
-          selectPlace={async placeId => {
-            await this.wait();
-            await this.clear();
-            await this.deactivate();
-            await this.placeDetails(placeId);
-          }}
-          showManualHeader={this.state.active}
-          manualHeader={manualHeader}
-        />;
+        return (
+          <AutocompletePlaces
+            places={this.state.placesAuto}
+            selectPlace={async placeId => {
+              await this.wait();
+              await this.clear();
+              await this.deactivate();
+              await this.placeDetails(placeId);
+            }}
+            showManualHeader={this.state.active}
+            manualHeader={manualHeader}
+          />
+        );
       }
     }
   }
