@@ -136,7 +136,7 @@ export default class Home extends React.Component {
       payment: "CASH",
       quote: {
         mensaje: "Cotización",
-        precio: 0.0,
+        price: 0.0,
       },
     };
 
@@ -167,6 +167,58 @@ export default class Home extends React.Component {
     }
   };
 
+  setCurrentOrder = orderId => {
+    this.setCurrentOrder(orderId, false);
+  };
+
+  setCurrentOrder = async (orderId, isNew) => {
+    let ref = Constants.DATABASE.ref("/quotes/" + orderId);
+
+    await this.setState({ currentOrderRef: ref });
+
+    this.state.currentOrderRef.on("value", snap => {
+      const order = snap.exportVal();
+      //console.log("Nuevos datos de orden:", order);
+      let flowStatus = 0;
+
+      switch (order.status) {
+        case Constants.QUOTE_STATUS_ERROR:
+          if (this.state.currentOrderRef) {
+            this.state.currentOrderRef.off();
+          }
+          return;
+        case Constants.QUOTE_STATUS_SETTING_PRICE:
+          flowStatus = Constants.FLOW_STATUS_CONFIRMING;
+          break;
+        case (Constants.QUOTE_STATUS_PRICE_ACCEPTED, Constants.QUOTE_STATUS_DRIVER_GOING_TO_CLIENT):
+          flowStatus = Constants.FLOW_STATUS_CONFIRMED;
+          break;
+        case Constants.QUOTE_STATUS_WAITING_CLIENT:
+          flowStatus = Constants.FLOW_STATUS_BOARDING;
+          break;
+        /*case Constants.QUOTE_STATUS_CLIENT_ABORDED:
+          flowStatus = Constants.FLOW_STATUS_TRAVELLING;
+          break;*/
+      }
+
+      this.setState(
+        {
+          quote: order,
+          origin: order.origin,
+          destination: order.destination,
+          currentOrder: orderId,
+        },
+        order.status === 0 ? this.getDriverTime : null
+      );
+
+      if (!isNew) {
+        this.setState({ flowStatus });
+      } else {
+        isNew = false;
+      }
+    });
+  };
+
   //saveUser: Guarda al usuario actual en el estado y recupera sus datos de Firestore.
   saveUser = async user => {
     await this.setState({ user });
@@ -181,9 +233,7 @@ export default class Home extends React.Component {
         .then(doc => {
           if (doc.exists) {
             this.setState({ userData: doc.data() });
-            firebase
-              .database()
-              .ref()
+            Constants.DATABASE.ref()
               .child("quotes/")
               .once("value", snap => {
                 snap.forEach(datasnap => {
@@ -192,49 +242,7 @@ export default class Home extends React.Component {
                   if (order.userUid === doc.id) {
                     if (order.status !== 7 && order.status !== 6 && order.status !== -1) {
                       console.log("Orden recuperada:", datasnap, "Estado:", order.status);
-                      if (order.status === 0) {
-                        this.setState({
-                          quote: order,
-                          destination: order.destination,
-                          currentOrder: datasnap.key,
-                          flowStatus: 2,
-                        });
-                      } else if (order.status === 1) {
-                        this.setState(
-                          {
-                            quote: order,
-                            origin: order.origin,
-                            destination: order.destination,
-                            currentOrder: datasnap.key,
-                            flowStatus: 4,
-                          },
-                          this.getDriverTime
-                        );
-                      } else if (order.status === 2 || order.status === 3) {
-                        this.setState(
-                          {
-                            quote: order,
-                            origin: order.origin,
-                            destination: order.destination,
-                            currentOrder: datasnap.key,
-                            flowStatus: 5,
-                          },
-                          this.getDriverTime
-                        );
-                      } else if (order.status === 5) {
-                        this.setState(
-                          {
-                            quote: {
-                              precio: order.price,
-                            },
-                            origin: order.origin,
-                            destination: order.destination,
-                            currentOrder: datasnap.key,
-                            flowStatus: 6,
-                          },
-                          this.getDriverTime
-                        );
-                      }
+                      this.setCurrentOrder(datasnap.key);
                     }
                   }
                 });
@@ -518,14 +526,14 @@ export default class Home extends React.Component {
     console.log("notification id", notification.data.id);
     console.log("notification data", notification.data);
 
-    switch (notification.data.id) {
+    /*switch (notification.data.id) {
       case Constants.NOTIFICATION_QUOTE: {
         console.log("Quote recibida: ", notification);
 
         this.setState({
           quote: {
             mensaje: notification.data.mensaje,
-            precio: notification.data.precio,
+            price: notification.data.price,
           },
           flowStatus: Constants.FLOW_STATUS_CONFIRMING,
         });
@@ -546,7 +554,7 @@ export default class Home extends React.Component {
         });
         break;
       }
-    }
+    }*/
 
     if (Platform.OS === "android" && AppState.currentState === "active") {
       await Notifications.dismissAllNotificationsAsync();
@@ -557,21 +565,17 @@ export default class Home extends React.Component {
     return new Promise(async (resolve, reject) => {
       let lat = 0.0;
       let lng = 0.0;
-      await firebase
-        .database()
-        .ref()
+      await Constants.DATABASE.ref()
         .child("/quotes/" + this.state.currentOrder + "/driver/")
         .once("value", driverUid => {
           let driver = driverUid.exportVal();
           console.log("DRIVER UID = " + driver);
-          firebase
-            .database()
-            .ref()
+          Constants.DATABASE.ref()
             .child("/locations/" + driver + "/position/")
             .once("value", async driverLocation => {
               let driverLoc = driverLocation.exportVal();
-              lat = await driverLoc.lat;
-              lng = await driverLoc.lng;
+              lat = driverLoc ? await driverLoc.lat : Constants.INITIAL_REGION.latitude;
+              lng = driverLoc ? await driverLoc.lng : Constants.INITIAL_REGION.longitude;
               console.log("DRIVER LAT = " + lat);
               console.log("DRIVER LNG = " + lng);
               console.log("lat1 = " + lat);
@@ -746,10 +750,7 @@ export default class Home extends React.Component {
         onPress: () => {
           this.reset();
           if (this.state.currentOrder) {
-            firebase
-              .database()
-              .ref("/quotes/" + this.state.currentOrder + "/status")
-              .set(-1);
+            Constants.DATABASE.ref("/quotes/" + this.state.currentOrder + "/status").set(-1);
           }
         },
         style: "cancel",
@@ -778,41 +779,24 @@ export default class Home extends React.Component {
 
       if (location.gpsAvailable) {
         await this._getLocationAsync();
-        this.state.dev
-          ? (data = {
-              userUid: this.state.userUid,
-              origin: {
-                name: "Ubicación del Cliente",
-                address: "Obtenida por GPS",
-                lat: this.state.location.coords.latitude,
-                lng: this.state.location.coords.longitude,
-              },
-              destination: this.state.destination,
-              status: Constants.QUOTE_STATUS_PENDING,
-              usingGps: this.state.usingGps,
-              timeStamps: { clientAsked: new Date().toString() },
-              payment: this.state.payment,
-              dev: true,
-            })
-          : (data = {
-              userUid: this.state.userUid,
-              origin: {
-                name: "Ubicación del Cliente",
-                address: "Obtenida por GPS",
-                lat: this.state.location.coords.latitude,
-                lng: this.state.location.coords.longitude,
-              },
-              destination: this.state.destination,
-              status: Constants.QUOTE_STATUS_PENDING,
-              usingGps: this.state.usingGps,
-              timeStamps: { clientAsked: new Date().toString() },
-              payment: this.state.payment,
-            });
+        data = {
+          userUid: this.state.userUid,
+          origin: {
+            name: "Ubicación del Cliente",
+            address: "Obtenida por GPS",
+            lat: this.state.location.coords.latitude,
+            lng: this.state.location.coords.longitude,
+          },
+          destination: this.state.destination,
+          status: Constants.QUOTE_STATUS_NO_ANSWER,
+          usingGps: this.state.usingGps,
+          timeStamps: { clientAsked: new Date().toString() },
+          payment: this.state.payment,
+          dev: this.state.dev,
+        };
 
         console.log("Enviando orden", data);
-        var key = firebase
-          .database()
-          .ref()
+        var key = Constants.DATABASE.ref()
           .child("quotes")
           .push().key;
 
@@ -821,40 +805,27 @@ export default class Home extends React.Component {
         var updates = {};
         updates["/quotes/" + key] = data;
 
-        firebase
-          .database()
-          .ref()
-          .update(updates, error => (error ? this.quoteError() : this.quoteSuccess()));
+        Constants.DATABASE.ref()
+          .update(updates, error => (error ? this.quoteError() : this.quoteSuccess()))
+          .then(() => this.setCurrentOrder(key, true));
       } else {
         Alert.alert("Servicios GPS", "Por favor active los servicios de GPS para continuar.");
         quoteError();
       }
     } else {
       console.log("Enviando carrera con origen manual...");
-
-      this.state.dev
-        ? (data = {
-            userUid: this.state.userUid,
-            origin: this.state.origin,
-            destination: this.state.destination,
-            status: Constants.QUOTE_STATUS_PENDING,
-            usingGps: false,
-            timeStamps: { clientAsked: new Date().toString() },
-            dev: true,
-          })
-        : (data = {
-            userUid: this.state.userUid,
-            origin: this.state.origin,
-            destination: this.state.destination,
-            status: Constants.QUOTE_STATUS_PENDING,
-            usingGps: false,
-            timeStamps: { clientAsked: new Date().toString() },
-          });
+      data = {
+        userUid: this.state.userUid,
+        origin: this.state.origin,
+        destination: this.state.destination,
+        status: Constants.QUOTE_STATUS_NO_ANSWER,
+        usingGps: false,
+        timeStamps: { clientAsked: new Date().toString() },
+        dev: this.state.dev,
+      };
 
       console.log("Enviando orden", data);
-      var key = firebase
-        .database()
-        .ref()
+      var key = Constants.DATABASE.ref()
         .child("quotes")
         .push().key;
 
@@ -863,10 +834,9 @@ export default class Home extends React.Component {
       var updates = {};
       updates["/quotes/" + key] = data;
 
-      firebase
-        .database()
-        .ref()
-        .update(updates, error => (error ? this.quoteError() : this.quoteSuccess()));
+      Constants.DATABASE.ref()
+        .update(updates, error => (error ? this.quoteError() : this.quoteSuccess()))
+        .then(() => this.setCurrentOrder(key, true));
     }
   };
 
@@ -881,15 +851,13 @@ export default class Home extends React.Component {
     var updates = {};
     updates["/quotes/" + this.state.currentOrder + "/status"] = 2;
 
-    firebase
-      .database()
-      .ref()
-      .update(updates, error =>
-        error
-          ? this.setState({ flowStatus: Constants.FLOW_STATUS_ERROR })
-          : (this.setState({ flowStatus: Constants.FLOW_STATUS_CONFIRMED }), this.getDriverTime())
-      );
+    Constants.DATABASE.ref().update(updates, error =>
+      error
+        ? this.setState({ flowStatus: Constants.FLOW_STATUS_ERROR })
+        : (this.setState({ flowStatus: Constants.FLOW_STATUS_CONFIRMED }), this.getDriverTime())
+    );
   };
+
   changePayment = payment => {
     this.setState({ payment });
   };
@@ -925,7 +893,7 @@ export default class Home extends React.Component {
     );
 
     if (this.state.flowStatus != Constants.FLOW_STATUS_NONE) {
-      console.log("el flow esta en este: ", this.state.flowStatus);
+      console.log("Flow Status: ", this.state.flowStatus);
       switch (this.state.flowStatus) {
         case Constants.FLOW_STATUS_QUOTING:
           return (
@@ -951,7 +919,7 @@ export default class Home extends React.Component {
             <FlowConfirmar
               onConfirm={this.handleConfirm}
               onCancel={this.cancelOrder}
-              price={this.state.quote.precio}
+              price={this.state.quote.price}
               destination={this.state.destination.name}
             />
           );

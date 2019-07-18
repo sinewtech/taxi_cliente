@@ -7,6 +7,7 @@ import firebase from "./firebase.js";
 
 //Firebase
 export const FIRESTORE = firebase.firestore();
+export const DATABASE = firebase.database();
 
 //Colores
 export const COLOR_AMBER = "#FFC107";
@@ -22,8 +23,14 @@ export const LOCATION_ORIGIN = 0;
 export const LOCATION_DESTINATION = 1;
 
 //Estados de cotización
-export const QUOTE_STATUS_PENDING = 0;
-export const QUOTE_STATUS_SUCCESS = 1;
+export const QUOTE_STATUS_NO_ANSWER = 0;
+export const QUOTE_STATUS_SETTING_PRICE = 1;
+export const QUOTE_STATUS_PRICE_ACCEPTED = 2;
+export const QUOTE_STATUS_DRIVER_GOING_TO_CLIENT = 3;
+export const QUOTE_STATUS_DRIVER_DENNIED = 4;
+export const QUOTE_STATUS_WAITING_CLIENT = 5;
+export const QUOTE_STATUS_CLIENT_ABORDED = 6;
+export const QUOTE_STATUS_FINISHED = 7;
 export const QUOTE_STATUS_ERROR = -1;
 
 //Estados de flujo

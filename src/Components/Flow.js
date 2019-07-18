@@ -118,7 +118,7 @@ export class FlowConfirmar extends React.Component {
         </View>
         <Text flex={1}>Precio a {this.props.destination}</Text>
         <Text style={styles.displayTitle} flex={1}>
-          L. {this.props.price.toFixed(2)}
+          L. {this.props.price ? this.props.price.toFixed(2) : 0}
         </Text>
         <View style={styles.buttonRow} flex={1}>
           <BottomButton
@@ -185,7 +185,7 @@ export class FlowAceptar extends React.Component {
           buttonStyle={{ backgroundColor: Constants.COLOR_GREEN, borderRadius: 100 }}
           containerStyle={{ width: "80%" }}
           onPress={() => {
-            Alert.alert("LLamada", "Se le notificara al conductor que llame a su numero", [
+            Alert.alert("Llamada", "Se le notificara al conductor que llame a su numero", [
               { text: "CANCELAR" },
               {
                 text: "SOLICITAR",
@@ -200,8 +200,8 @@ export class FlowAceptar extends React.Component {
                       messages.push({
                         to: snap.data().pushDevices[0],
                         sound: "default",
-                        title: "Ayuda a tu cliente",
-                        body: "El cliente necesita que lo llames.",
+                        title: "Llama al cliente",
+                        body: "El cliente ha solicitado que lo llames.",
                         data: {
                           id: 5,
                         },
