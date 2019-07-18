@@ -202,9 +202,7 @@ export default class Home extends React.Component {
                       } else if (order.status === 1) {
                         this.setState(
                           {
-                            quote: {
-                              precio: order.price,
-                            },
+                            quote: order,
                             origin: order.origin,
                             destination: order.destination,
                             currentOrder: datasnap.key,
@@ -215,9 +213,7 @@ export default class Home extends React.Component {
                       } else if (order.status === 2 || order.status === 3) {
                         this.setState(
                           {
-                            quote: {
-                              precio: order.price,
-                            },
+                            quote: order,
                             origin: order.origin,
                             destination: order.destination,
                             currentOrder: datasnap.key,
@@ -962,7 +958,13 @@ export default class Home extends React.Component {
         case Constants.FLOW_STATUS_ERROR:
           return <FlowError onConfirm={this.clear} />;
         case Constants.FLOW_STATUS_CONFIRMED:
-          return <FlowAceptar onCancel={this.cancelOrder} duration={this.state.duration} />;
+          return (
+            <FlowAceptar
+              onCancel={this.cancelOrder}
+              driver={this.state.quote.driver}
+              duration={this.state.duration}
+            />
+          );
         case Constants.FLOW_STATUS_BOARDING:
           console.log("estado", this.state);
           return <FlowAbordando order={this.state.currentOrder} />;
