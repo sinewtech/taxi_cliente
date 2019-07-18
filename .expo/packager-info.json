@@ -2,9 +2,9 @@
   "expoServerPort": 19000,
   "expoServerNgrokUrl": "https://32-9i8.sinewave.taxi-cliente.exp.direct",
   "packagerNgrokUrl": "https://packager.32-9i8.sinewave.taxi-cliente.exp.direct",
-  "ngrokPid": 17572,
+  "ngrokPid": 4472,
   "devToolsPort": 19002,
   "packagerPort": 19001,
-  "packagerPid": 10904,
+  "packagerPid": 16736,
   "webpackServerPort": null
 }

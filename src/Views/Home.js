@@ -462,8 +462,7 @@ export default class Home extends React.Component {
     registerForPushNotificationsAsync()
       .then(pushToken => {
         if (pushToken) {
-          firebase
-            .firestore()
+          Constants.FIRESTORE
             .collection("clients")
             .doc(this.state.userUid)
             .get()
@@ -485,8 +484,7 @@ export default class Home extends React.Component {
                 pushTokens.push(pushToken);
               }
               console.log("celulares", pushTokens);
-              firebase
-                .firestore()
+              Constants.FIRESTORE
                 .collection("clients")
                 .doc(this.state.userUid)
                 .update({
