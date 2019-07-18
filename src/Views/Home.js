@@ -188,9 +188,10 @@ export default class Home extends React.Component {
               .once("value", snap => {
                 snap.forEach(datasnap => {
                   let order = datasnap.exportVal();
+
                   if (order.userUid === doc.id) {
                     if (order.status !== 7 && order.status !== 6 && order.status !== -1) {
-                      console.log(datasnap.key, order.status);
+                      console.log("Orden recuperada:", datasnap, "Estado:", order.status);
                       if (order.status === 0) {
                         this.setState({
                           quote: order,
